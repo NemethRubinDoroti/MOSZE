@@ -62,10 +62,38 @@ public class GameManager2D : MonoBehaviour
         }
     }
 
+    public void PauseGame()
+    {
+        currentState = GameState.Paused;
+        Time.timeScale = 0f;
+    }
+
+    public void ResumeGame()
+    {
+        currentState = GameState.Playing;
+        Time.timeScale = 1f;
+    }
+
     public void EndGame()
     {
         currentState = GameState.GameOver;
         Time.timeScale = 0f;
+    }
+
+    private void Update()
+    {
+        // ESC gombbal pause/unpause
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (currentState == GameState.Playing)
+            {
+                PauseGame();
+            }
+            else if (currentState == GameState.Paused)
+            {
+                ResumeGame();
+            }
+        }
     }
 }
 
