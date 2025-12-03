@@ -28,6 +28,13 @@ public class MapGenerator : MonoBehaviour
     public float enemySpawnChance = 0.6f; // 60% esély, hogy egy szobában legyen ellenség
     public bool spawnBossInLastRoom = true;
 
+    [Header("Hostage Spawning")]
+    public HostageSpawner hostageSpawner;
+    public int minHostagesPerRoom = 0;
+    public int maxHostagesPerRoom = 2;
+    [Range(0f, 1f)]
+    public float hostageSpawnChance = 0.4f; // 40% esély, hogy egy szobában legyen túsz
+
     private int currentSeed;
     private List<Room> rooms;
     private bool[,] map;
@@ -81,7 +88,47 @@ public class MapGenerator : MonoBehaviour
 
     private void GenerateCorridors()
     {
-        // TODO: Folyosó generálás...
+        ConnectRooms();
+    }
+
+    private void ConnectRooms()
+    {
+        if (rooms.Count < 2) return;
+
+        // Szobák összekötése
+        for (int i = 0; i < rooms.Count - 1; i++)
+        {
+            Vector2Int start = rooms[i].GetCenter();
+            Vector2Int end = rooms[i + 1].GetCenter();
+
+            BuildLShapedCorridor(start, end);
+        }
+    }
+
+    private void BuildLShapedCorridor(Vector2Int start, Vector2Int end)
+    {
+        int x = start.x;
+        int y = start.y;
+
+        // Függőleges
+        while (x != end.x)
+        {
+            if (x >= 0 && x < mapWidth && y >= 0 && y < mapHeight)
+            {
+                map[x, y] = true;
+            }
+            x += (end.x > start.x) ? 1 : -1;
+        }
+
+        // Vízszintes
+        while (y != end.y)
+        {
+            if (x >= 0 && x < mapWidth && y >= 0 && y < mapHeight)
+            {
+                map[x, y] = true;
+            }
+            y += (end.y > start.y) ? 1 : -1;
+        }
     }
 
     private void PlaceTiles()
@@ -92,20 +139,53 @@ public class MapGenerator : MonoBehaviour
         groundTilemap.ClearAllTiles();
         wallTilemap.ClearAllTiles();
 
-        // Padló lehelyezése
-        foreach (Room room in rooms)
+        // Padló lehelyezése (szobák és folyosók)
+        for (int x = 0; x < mapWidth; x++)
         {
-            for (int x = room.position.x; x < room.position.x + room.width; x++)
+            for (int y = 0; y < mapHeight; y++)
             {
-                for (int y = room.position.y; y < room.position.y + room.height; y++)
+                if (map[x, y] && floorTile != null)
                 {
-                    if (x >= 0 && x < mapWidth && y >= 0 && y < mapHeight)
+                    groundTilemap.SetTile(new Vector3Int(x, y, 0), floorTile);
+                }
+            }
+        }
+
+        // Falak lehelyezése
+        PlaceWalls();
+    }
+
+    // falazás
+    private void PlaceWalls()
+    {
+        for (int x = 0; x < mapWidth; x++)
+        {
+            for (int y = 0; y < mapHeight; y++)
+            {
+                if (!map[x, y])
+                {
+                    bool adjacentToFloor = false;
+                    for (int dx = -1; dx <= 1; dx++)
                     {
-                        map[x, y] = true;
-                        if (floorTile != null)
+                        for (int dy = -1; dy <= 1; dy++)
                         {
-                            groundTilemap.SetTile(new Vector3Int(x, y, 0), floorTile);
+                            int nx = x + dx;
+                            int ny = y + dy;
+                            if (nx >= 0 && nx < mapWidth && ny >= 0 && ny < mapHeight)
+                            {
+                                if (map[nx, ny])
+                                {
+                                    adjacentToFloor = true;
+                                    break;
+                                }
+                            }
                         }
+                        if (adjacentToFloor) break;
+                    }
+
+                    if (adjacentToFloor && wallTile != null)
+                    {
+                        wallTilemap.SetTile(new Vector3Int(x, y, 0), wallTile);
                     }
                 }
             }
@@ -134,10 +214,18 @@ public class MapGenerator : MonoBehaviour
             enemySpawner.ClearAllEnemies();
         }
 
+        // Meglévő túszok törlése
+        if (hostageSpawner != null)
+        {
+            hostageSpawner.ClearAllHostages();
+        }
+
         if (rooms == null || rooms.Count == 0)
         {
             return;
         }
+
+        int totalHostages = 0;
 
         // Spawnolás
         for (int i = 0; i < rooms.Count; i++)
@@ -151,7 +239,7 @@ public class MapGenerator : MonoBehaviour
                 continue;
             }
 
-            // Random spawnolás a többi enemynek
+            // Random spawn ellenségeknek
             if (Random.Range(0f, 1f) < enemySpawnChance)
             {
                 int enemiesToSpawn = Random.Range(minEnemiesPerRoom, maxEnemiesPerRoom + 1);
@@ -161,6 +249,23 @@ public class MapGenerator : MonoBehaviour
                     SpawnEnemyInRoom(room, enemyType);
                 }
             }
+
+            // Random spawn túszoknak
+            if (Random.Range(0f, 1f) < hostageSpawnChance)
+            {
+                int hostagesToSpawn = Random.Range(minHostagesPerRoom, maxHostagesPerRoom + 1);
+                for (int j = 0; j < hostagesToSpawn; j++)
+                {
+                    SpawnHostageInRoom(room);
+                    totalHostages++;
+                }
+            }
+        }
+
+        // Túszok számlálásához
+        if (HostageManager.Instance != null)
+        {
+            HostageManager.Instance.InitializeHostageCount(totalHostages);
         }
     }
 
@@ -172,7 +277,7 @@ public class MapGenerator : MonoBehaviour
             return;
         }
 
-        // Find a valid walkable position in the room
+        // Érvényes spawn keresés
         Vector2Int? spawnPosition = FindValidSpawnPosition(room);
 
         if (spawnPosition.HasValue)
@@ -181,7 +286,7 @@ public class MapGenerator : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"[MapGenerator] Nincs érvényes spawn pont a szobában: ({room.position.x}, {room.position.y})");
+            Debug.LogWarning($"[MapGenerator] Nincs érvényes spawn pont az ellenfélnek: ({room.position.x}, {room.position.y})");
         }
     }
 
@@ -205,6 +310,27 @@ public class MapGenerator : MonoBehaviour
         }
 
         return null;
+    }
+
+    private void SpawnHostageInRoom(Room room)
+    {
+        if (hostageSpawner == null)
+        {
+            Debug.LogWarning("[MapGenerator] HostageSpawner nincs hozzárendelve");
+            return;
+        }
+
+        // Érvényes spawn keresés
+        Vector2Int? spawnPosition = FindValidSpawnPosition(room);
+
+        if (spawnPosition.HasValue)
+        {
+            hostageSpawner.SpawnHostage(spawnPosition.Value);
+        }
+        else
+        {
+            Debug.LogWarning($"[MapGenerator] Nincs megfelelő spawn a túsznak: ({room.position.x}, {room.position.y})");
+        }
     }
 
     // súlyozott random enemy spawn

@@ -2,14 +2,14 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 
 
-//Utility osztály grid-alapú műveletekhez
 public static class GridUtils
 {
-    
+
     public static int CalculateDistance(Vector2Int from, Vector2Int to)
     {
         return Mathf.Abs(to.x - from.x) + Mathf.Abs(to.y - from.y);
     }
+
 
     public static float CalculateDistanceFloat(Vector2Int from, Vector2Int to)
     {
@@ -18,18 +18,18 @@ public static class GridUtils
             new Vector2(to.x, to.y)
         );
     }
-    
-    // Irány meghatározása egy pozícióból egy másikba
+
+
     public static Vector2Int GetDirectionTowards(Vector2Int from, Vector2Int to)
     {
         Vector2Int direction = Vector2Int.zero;
-        
+
         if (to.x > from.x) direction.x = 1;
         else if (to.x < from.x) direction.x = -1;
-        
+
         if (to.y > from.y) direction.y = 1;
         else if (to.y < from.y) direction.y = -1;
-        
+
         // Előnyben részesítjük az egyik irányt, ha mindkettő nem nulla
         if (direction.x != 0 && direction.y != 0)
         {
@@ -42,18 +42,18 @@ public static class GridUtils
                 direction.x = 0;
             }
         }
-        
+
         return direction;
     }
-    
-    // Grid pozíciót világkoordinátákra konvertál (tile középpont)
+
+
     public static Vector3 GridToWorldPosition(Vector2Int gridPosition, Tilemap tilemap = null)
     {
         if (tilemap != null)
         {
             Vector3Int cellPos = new Vector3Int(gridPosition.x, gridPosition.y, 0);
             Vector3 worldPos = tilemap.CellToWorld(cellPos);
-            // CellToWorld visszatér a bal alsó sarokkal, hozzáadjuk a cellák méretének fele a középponthoz
+            // CellToWorld visszatér a bal alsó sarokkal, hozzáadjuk a cellák méretének felét a középponthoz
             worldPos += new Vector3(tilemap.cellSize.x * 0.5f, tilemap.cellSize.y * 0.5f, 0);
             return worldPos;
         }
@@ -63,8 +63,8 @@ public static class GridUtils
             return new Vector3(gridPosition.x, gridPosition.y, 0);
         }
     }
-    
-    // Grid pozíciót világkoordinátákra konvertál (tile középpont) - GameManager2D-ből tilemap-et használ
+
+
     public static Vector3 GridToWorldPosition(Vector2Int gridPosition)
     {
         Tilemap tilemap = null;
@@ -72,8 +72,9 @@ public static class GridUtils
         {
             tilemap = GameManager2D.Instance.mapGenerator.groundTilemap;
         }
-        
+
         return GridToWorldPosition(gridPosition, tilemap);
     }
 }
+
 

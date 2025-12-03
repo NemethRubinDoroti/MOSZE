@@ -55,7 +55,6 @@ public class Combatant
         return damage;
     }
     
-    // Ez így csúnya :(
     public int CalculateDistance(Combatant other)
     {
         return GridUtils.CalculateDistance(position, other.position);

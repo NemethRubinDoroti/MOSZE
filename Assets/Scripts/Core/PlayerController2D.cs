@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+
 
 public class PlayerController2D : MonoBehaviour
 {
@@ -17,39 +19,14 @@ public class PlayerController2D : MonoBehaviour
 
     private void Awake()
     {
+        // BoxCollider2D ellenőrzése
         playerCollider = GetComponent<BoxCollider2D>();
         if (playerCollider == null)
         {
             playerCollider = gameObject.AddComponent<BoxCollider2D>();
         }
 
-        if (playerCollider != null)
-        {
-            playerCollider.size = new Vector2(0.3f, 0.1f);
-            playerCollider.offset = new Vector2(0f, -0.5f);
-            playerCollider.isTrigger = true;
-        }
-    }
-
-    private void Start()
-    {
-        player2D = GetComponent<Player2D>();
-        if (player2D == null)
-        {
-            Debug.LogError("PlayerController2D requires Player2D component!");
-        }
-
-        // BoxCollider ellenőrzése
-        if (playerCollider == null)
-        {
-            playerCollider = GetComponent<BoxCollider2D>();
-            if (playerCollider == null)
-            {
-                playerCollider = gameObject.AddComponent<BoxCollider2D>();
-            }
-        }
-
-        // Collider setup
+        // Collider beállítások
         if (playerCollider != null)
         {
             playerCollider.size = new Vector2(0.3f, 0.1f);
@@ -59,6 +36,15 @@ public class PlayerController2D : MonoBehaviour
             // Értékek cachelése
             cachedColliderSize = playerCollider.size;
             cachedColliderOffset = playerCollider.offset;
+        }
+    }
+
+    private void Start()
+    {
+        player2D = GetComponent<Player2D>();
+        if (player2D == null)
+        {
+            Debug.LogError("[PlayerController] Player nincs hozzárendelve!");
         }
 
         InitializeCache();
@@ -115,7 +101,7 @@ public class PlayerController2D : MonoBehaviour
             Vector3 movement = new Vector3(input.x, input.y, 0) * moveSpeed * Time.deltaTime;
             Vector3 newPosition = transform.position + movement;
 
-            // Collision check
+            // Érintkezés?
             if (CanMoveTo(newPosition))
             {
                 transform.position = newPosition;
@@ -123,6 +109,36 @@ public class PlayerController2D : MonoBehaviour
                 {
                     player2D.position = Vector2Int.RoundToInt(newPosition);
                 }
+
+                // Túszok összegyűjtése
+                // jobb ötlet vki hogy ne a moveba legyen?
+                CheckForHostages();
+            }
+        }
+    }
+
+    private void CheckForHostages()
+    {
+        if (player2D == null || GameManager2D.Instance == null || GameManager2D.Instance.mapGenerator == null)
+        {
+            return;
+        }
+
+        HostageSpawner hostageSpawner = GameManager2D.Instance.mapGenerator.hostageSpawner;
+        if (hostageSpawner == null)
+        {
+            return;
+        }
+
+        Vector2Int playerPos = player2D.position;
+        List<Hostage2D> hostages = hostageSpawner.GetSpawnedHostages();
+
+        foreach (Hostage2D hostage in hostages)
+        {
+            if (hostage != null && hostage.position == playerPos)
+            {
+                hostage.OnCollected();
+                break; // Max 1 túsz / frame!
             }
         }
     }

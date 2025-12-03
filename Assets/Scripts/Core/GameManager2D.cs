@@ -16,6 +16,7 @@ public class GameManager2D : MonoBehaviour
     public Player2D player;
     public MapGenerator mapGenerator;
     public CombatManager combatManager;
+    public HostageManager hostageManager;
     public int currentSeed;
 
     private void Awake()
