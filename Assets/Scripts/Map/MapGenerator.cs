@@ -20,6 +20,14 @@ public class MapGenerator : MonoBehaviour
     public Tilemap groundTilemap;
     public Tilemap wallTilemap;
 
+    [Header("Enemy Spawning")]
+    public EnemySpawner enemySpawner;
+    public int minEnemiesPerRoom = 0;
+    public int maxEnemiesPerRoom = 3;
+    [Range(0f, 1f)]
+    public float enemySpawnChance = 0.6f; // 60% esély, hogy egy szobában legyen ellenség
+    public bool spawnBossInLastRoom = true;
+
     private int currentSeed;
     private List<Room> rooms;
     private bool[,] map;
@@ -35,6 +43,7 @@ public class MapGenerator : MonoBehaviour
         GenerateRooms();
         GenerateCorridors();
         PlaceTiles();
+        PlaceObjects();
     }
 
     private void GenerateRooms()
@@ -115,6 +124,96 @@ public class MapGenerator : MonoBehaviour
             return false;
         }
         return map[position.x, position.y];
+    }
+
+    private void PlaceObjects()
+    {
+        // Meglévő ellenfelek törlése
+        if (enemySpawner != null)
+        {
+            enemySpawner.ClearAllEnemies();
+        }
+
+        if (rooms == null || rooms.Count == 0)
+        {
+            return;
+        }
+
+        // Spawnolás
+        for (int i = 0; i < rooms.Count; i++)
+        {
+            Room room = rooms[i];
+
+            // Boss az utolsó szobába
+            if (spawnBossInLastRoom && i == rooms.Count - 1)
+            {
+                SpawnEnemyInRoom(room, Enemy2D.EnemyType.Boss);
+                continue;
+            }
+
+            // Random spawnolás a többi enemynek
+            if (Random.Range(0f, 1f) < enemySpawnChance)
+            {
+                int enemiesToSpawn = Random.Range(minEnemiesPerRoom, maxEnemiesPerRoom + 1);
+                for (int j = 0; j < enemiesToSpawn; j++)
+                {
+                    Enemy2D.EnemyType enemyType = GetRandomEnemyType();
+                    SpawnEnemyInRoom(room, enemyType);
+                }
+            }
+        }
+    }
+
+    private void SpawnEnemyInRoom(Room room, Enemy2D.EnemyType enemyType)
+    {
+        if (enemySpawner == null)
+        {
+            Debug.LogWarning("[MapGenerator] Nincs EnemySpawner beállítva");
+            return;
+        }
+
+        // Find a valid walkable position in the room
+        Vector2Int? spawnPosition = FindValidSpawnPosition(room);
+
+        if (spawnPosition.HasValue)
+        {
+            enemySpawner.SpawnEnemy(enemyType, spawnPosition.Value);
+        }
+        else
+        {
+            Debug.LogWarning($"[MapGenerator] Nincs érvényes spawn pont a szobában: ({room.position.x}, {room.position.y})");
+        }
+    }
+
+    private Vector2Int? FindValidSpawnPosition(Room room)
+    {
+        int attempts = 0;
+        int maxAttempts = 50;
+
+        while (attempts < maxAttempts)
+        {
+            int x = Random.Range(room.position.x + 1, room.position.x + room.width - 1);
+            int y = Random.Range(room.position.y + 1, room.position.y + room.height - 1);
+            Vector2Int pos = new Vector2Int(x, y);
+
+            if (IsWalkable(pos))
+            {
+                return pos;
+            }
+
+            attempts++;
+        }
+
+        return null;
+    }
+
+    // súlyozott random enemy spawn
+    private Enemy2D.EnemyType GetRandomEnemyType()
+    {
+        int rand = Random.Range(0, 100);
+        if (rand < 50) return Enemy2D.EnemyType.SecurityBot;
+        if (rand < 80) return Enemy2D.EnemyType.PatrolBot;
+        return Enemy2D.EnemyType.HeavyBot;
     }
 }
 

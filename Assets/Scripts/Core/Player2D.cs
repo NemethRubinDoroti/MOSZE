@@ -39,5 +39,25 @@ public class Player2D : MonoBehaviour
         position = newPosition;
         transform.position = new Vector3(position.x, position.y, 0);
     }
+    
+    public void TakeDamage(int damage)
+    {
+        if (stats != null)
+        {
+            stats.TakeDamage(damage);
+            if (!stats.IsAlive())
+            {
+                Die();
+            }
+        }
+    }
+    
+    private void Die()
+    {
+        if (GameManager2D.Instance != null)
+        {
+            GameManager2D.Instance.EndGame();
+        }
+    }
 }
 
