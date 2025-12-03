@@ -51,6 +51,13 @@ public class EnemySpawner : MonoBehaviour
             Destroy(enemyObj);
             return null;
         }
+        
+        // Harc trigger hozzáadása
+        CombatTrigger combatTrigger = enemyObj.GetComponent<CombatTrigger>();
+        if (combatTrigger == null)
+        {
+            combatTrigger = enemyObj.AddComponent<CombatTrigger>();
+        }
 
         spawnedEnemies.Add(enemy);
 

@@ -15,6 +15,7 @@ public class GameManager2D : MonoBehaviour
     public GameState currentState = GameState.MainMenu;
     public Player2D player;
     public MapGenerator mapGenerator;
+    public CombatManager combatManager;
     public int currentSeed;
 
     private void Awake()

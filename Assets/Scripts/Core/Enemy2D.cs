@@ -123,5 +123,21 @@ public class Enemy2D : MonoBehaviour
     {
         return position;
     }
+    
+    private Combatant combatant;
+    
+    public Combatant GetCombatant()
+    {
+        if (combatant == null)
+        {
+            combatant = new Combatant(position, stats, false, $"enemy_{GetInstanceID()}");
+        }
+        else
+        {
+            combatant.position = position;
+            combatant.stats = stats;
+        }
+        return combatant;
+    }
 }
 

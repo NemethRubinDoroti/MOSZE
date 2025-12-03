@@ -40,6 +40,19 @@ public class Player2D : MonoBehaviour
         transform.position = new Vector3(position.x, position.y, 0);
     }
     
+    public Combatant GetCombatant()
+    {
+        if (stats == null)
+        {
+            stats = GetComponent<Stats>();
+            if (stats == null)
+            {
+                stats = gameObject.AddComponent<Stats>();
+            }
+        }
+        return new Combatant(position, stats, true, "player");
+    }
+    
     public void TakeDamage(int damage)
     {
         if (stats != null)

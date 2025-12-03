@@ -14,37 +14,132 @@ public class AIBehaviour : MonoBehaviour
         Random         // Random
     }
 
-    // távolság számítása
-    public int CalculateDistance(Vector2Int from, Vector2Int to)
+    public Action GetNextAction(Combatant enemy, Combatant player)
     {
-        return Mathf.Abs(to.x - from.x) + Mathf.Abs(to.y - from.y);
-    }
-
-    // Irány
-    public Vector2Int GetDirectionTowards(Vector2Int from, Vector2Int to)
-    {
-        Vector2Int direction = Vector2Int.zero;
-
-        if (to.x > from.x) direction.x = 1;
-        else if (to.x < from.x) direction.x = -1;
-
-        if (to.y > from.y) direction.y = 1;
-        else if (to.y < from.y) direction.y = -1;
-
-        // Válasszon irányt ha egyik táv se 0
-        if (direction.x != 0 && direction.y != 0)
+        if (enemy == null || player == null || !enemy.isAlive || !player.isAlive)
         {
-            if (Random.Range(0, 2) == 0)
-            {
-                direction.y = 0;
-            }
-            else
-            {
-                direction.x = 0;
-            }
+            return null;
         }
 
-        return direction;
+        int distance = GridUtils.CalculateDistance(enemy.position, player.position);
+
+        switch (behaviorType)
+        {
+            case AIBehaviorType.Aggressive:
+                return GetAggressiveAction(enemy, player, distance);
+
+            case AIBehaviorType.Defensive:
+                return GetDefensiveAction(enemy, player, distance);
+
+            case AIBehaviorType.Cautious:
+                return GetCautiousAction(enemy, player, distance);
+
+            case AIBehaviorType.Random:
+                return GetRandomAction(enemy, player, distance);
+
+            default:
+                return GetAggressiveAction(enemy, player, distance);
+        }
     }
+
+    private Action GetAggressiveAction(Combatant enemy, Combatant player, int distance)
+    {
+        // Támadás, ha közel van
+        if (distance <= attackRange)
+        {
+            return new Action(Action.ActionType.Attack, enemy, player);
+        }
+
+        // Mozgás a játékos felé, ha nincs túl messze
+        if (distance <= moveRange * 2)
+        {
+            Vector2Int direction = GridUtils.GetDirectionTowards(enemy.position, player.position);
+            Vector2Int newPos = enemy.position + direction;
+            return new Action(Action.ActionType.Move, enemy, newPos);
+        }
+
+        // Várakozás, ha túl messze
+        return new Action(Action.ActionType.Wait, enemy);
+    }
+
+    private Action GetDefensiveAction(Combatant enemy, Combatant player, int distance)
+    {
+        // Támadás, ha nagyon közel
+        if (distance <= 1)
+        {
+            return new Action(Action.ActionType.Attack, enemy, player);
+        }
+
+        // Védekezés, ha közel van, de nincs támadási távolságban
+        if (distance <= attackRange + 1)
+        {
+            return new Action(Action.ActionType.Defend, enemy);
+        }
+
+        // Mozgás közelebb, ha távol van
+        if (distance <= moveRange * 2)
+        {
+            Vector2Int direction = GridUtils.GetDirectionTowards(enemy.position, player.position);
+            Vector2Int newPos = enemy.position + direction;
+            return new Action(Action.ActionType.Move, enemy, newPos);
+        }
+
+        return new Action(Action.ActionType.Wait, enemy);
+    }
+
+    private Action GetCautiousAction(Combatant enemy, Combatant player, int distance)
+    {
+        // Támadás, ha van elég életerő
+        float healthPercent = (float)enemy.stats.currentHealth / enemy.stats.maxHealth;
+
+        if (distance <= attackRange && healthPercent > 0.5f)
+        {
+            return new Action(Action.ActionType.Attack, enemy, player);
+        }
+
+        // Mozgás közelebb, ha van elég életerő
+        if (distance <= moveRange && healthPercent > 0.3f)
+        {
+            Vector2Int direction = GridUtils.GetDirectionTowards(enemy.position, player.position);
+            Vector2Int newPos = enemy.position + direction;
+            return new Action(Action.ActionType.Move, enemy, newPos);
+        }
+
+        // Védekezés,ha kevés életerő
+        return new Action(Action.ActionType.Defend, enemy);
+    }
+
+    private Action GetRandomAction(Combatant enemy, Combatant player, int distance)
+    {
+        int rand = Random.Range(0, 4);
+
+        switch (rand)
+        {
+            case 0:
+                if (distance <= attackRange)
+                {
+                    return new Action(Action.ActionType.Attack, enemy, player);
+                }
+                break;
+
+            case 1:
+                if (distance > 1)
+                {
+                    Vector2Int direction = GridUtils.GetDirectionTowards(enemy.position, player.position);
+                    Vector2Int newPos = enemy.position + direction;
+                    return new Action(Action.ActionType.Move, enemy, newPos);
+                }
+                break;
+
+            case 2:
+                return new Action(Action.ActionType.Defend, enemy);
+
+            default:
+                return new Action(Action.ActionType.Wait, enemy);
+        }
+
+        return new Action(Action.ActionType.Wait, enemy);
+    }
+
 }
 
