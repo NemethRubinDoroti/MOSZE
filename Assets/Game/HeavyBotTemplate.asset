@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aaef0d0fe60b4774d8a2f98832d289b1, type: 3}
+  m_Name: HeavyBotTemplate
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyTemplate
+  enemyType: 2
+  enemyName: Heavy Bot
+  description: "Rendfenntart\xF3 egys\xE9g"
+  maxHealth: 100
+  attack: 20
+  defense: 10
+  speed: 5
+  accuracy: 65
+  behaviorType: 1
+  attackRange: 1
+  moveRange: 3
+  sprite: {fileID: -2413806693520163455, guid: a3b6ae52994ed3e4c85325b9bfaeb04e, type: 3}
+  spriteColor: {r: 1, g: 0, b: 0, a: 1}
+  experienceReward: 10
+  scoreReward: 50

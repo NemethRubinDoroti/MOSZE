@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aaef0d0fe60b4774d8a2f98832d289b1, type: 3}
+  m_Name: SecBotTemplate
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyTemplate
+  enemyType: 0
+  enemyName: Security Bot
+  description: "Standard biztons\xE1gi egys\xE9g"
+  maxHealth: 50
+  attack: 12
+  defense: 5
+  speed: 8
+  accuracy: 70
+  behaviorType: 0
+  attackRange: 1
+  moveRange: 3
+  sprite: {fileID: -2413806693520163455, guid: a3b6ae52994ed3e4c85325b9bfaeb04e, type: 3}
+  spriteColor: {r: 0, g: 1, b: 0.07905316, a: 1}
+  experienceReward: 10
+  scoreReward: 50

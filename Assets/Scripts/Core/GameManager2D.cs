@@ -34,10 +34,13 @@ public class GameManager2D : MonoBehaviour
 
     private void Start()
     {
-        // UI inicializálás
+        // UI inicializálás - ha MainMenu állapotban vagyunk, mutassuk a főmenüt
         if (currentState == GameState.MainMenu)
         {
-            // TODO: Főmenü UI
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowMainMenu();
+            }
         }
     }
 
@@ -62,18 +65,36 @@ public class GameManager2D : MonoBehaviour
                 player.transform.position = new Vector3(startPos.x, startPos.y, 0);
             }
         }
+        
+        // UI frissítése
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowInGameHUD();
+        }
     }
 
     public void PauseGame()
     {
         currentState = GameState.Paused;
         Time.timeScale = 0f;
+        
+        // UI frissítése
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowPauseMenu();
+        }
     }
 
     public void ResumeGame()
     {
         currentState = GameState.Playing;
         Time.timeScale = 1f;
+        
+        // UI frissítése
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.HidePauseMenu();
+        }
     }
 
     public void EndGame()

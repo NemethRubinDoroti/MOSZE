@@ -71,6 +71,11 @@ crashlytics-build.properties
 [Aa]ssets/**/*.spriteatlasv2
 [Aa]ssets/**/*.tilemap
 [Aa]ssets/**/*.tile
+
+!Assets/Game/**/*.asset
+!Assets/Scenes/**/*.unity
+!Assets/**/*.inputactions
+
 [Aa]ssets/**/*.asset.meta
 [Aa]ssets/**/*.prefab.meta
 [Aa]ssets/**/*.unity.meta
@@ -93,5 +98,9 @@ crashlytics-build.properties
 [Aa]ssets/**/*.spriteatlasv2.meta
 [Aa]ssets/**/*.tilemap.meta
 [Aa]ssets/**/*.tile.meta
+
+!Assets/Game/**/*.asset.meta
+!Assets/Scenes/**/*.unity.meta
+!Assets/**/*.inputactions.meta
 
 !Assets/Scripts/**/*.cs
