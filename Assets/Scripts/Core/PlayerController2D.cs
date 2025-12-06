@@ -110,9 +110,9 @@ public class PlayerController2D : MonoBehaviour
                     player2D.position = Vector2Int.RoundToInt(newPosition);
                 }
 
-                // Túszok összegyűjtése
-                // jobb ötlet vki hogy ne a moveba legyen?
+                // Túszok és tárgyak összegyűjtése
                 CheckForHostages();
+                CheckForItems();
             }
         }
     }
@@ -139,6 +139,32 @@ public class PlayerController2D : MonoBehaviour
             {
                 hostage.OnCollected();
                 break; // Max 1 túsz / frame!
+            }
+        }
+    }
+
+    private void CheckForItems()
+    {
+        if (player2D == null || GameManager2D.Instance == null || GameManager2D.Instance.mapGenerator == null)
+        {
+            return;
+        }
+
+        ItemSpawner itemSpawner = GameManager2D.Instance.mapGenerator.itemSpawner;
+        if (itemSpawner == null)
+        {
+            return;
+        }
+
+        Vector2Int playerPos = player2D.position;
+        List<Item2D> items = itemSpawner.GetSpawnedItems();
+
+        foreach (Item2D item in items)
+        {
+            if (item != null && item.position == playerPos)
+            {
+                item.OnCollected();
+                break; // Max 1 tárgy / frame!
             }
         }
     }

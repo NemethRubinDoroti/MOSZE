@@ -35,6 +35,13 @@ public class MapGenerator : MonoBehaviour
     [Range(0f, 1f)]
     public float hostageSpawnChance = 0.4f; // 40% esély, hogy egy szobában legyen túsz
 
+    [Header("Item Spawning")]
+    public ItemSpawner itemSpawner;
+    public int minItemsPerRoom = 0;
+    public int maxItemsPerRoom = 2;
+    [Range(0f, 1f)]
+    public float itemSpawnChance = 0.5f; // 50% esély, hogy egy szobában legyen item
+
     private int currentSeed;
     private List<Room> rooms;
     private bool[,] map;
@@ -220,6 +227,12 @@ public class MapGenerator : MonoBehaviour
             hostageSpawner.ClearAllHostages();
         }
 
+        // Meglévő tárgyak törlése
+        if (itemSpawner != null)
+        {
+            itemSpawner.ClearAllItems();
+        }
+
         if (rooms == null || rooms.Count == 0)
         {
             return;
@@ -258,6 +271,17 @@ public class MapGenerator : MonoBehaviour
                 {
                     SpawnHostageInRoom(room);
                     totalHostages++;
+                }
+            }
+
+            // Random spawn tárgyaknak
+            if (Random.Range(0f, 1f) < itemSpawnChance)
+            {
+                int itemsToSpawn = Random.Range(minItemsPerRoom, maxItemsPerRoom + 1);
+                for (int j = 0; j < itemsToSpawn; j++)
+                {
+                    Item2D.ItemType itemType = GetRandomItemType();
+                    SpawnItemInRoom(room, itemType);
                 }
             }
         }
@@ -340,6 +364,45 @@ public class MapGenerator : MonoBehaviour
         if (rand < 50) return Enemy2D.EnemyType.SecurityBot;
         if (rand < 80) return Enemy2D.EnemyType.PatrolBot;
         return Enemy2D.EnemyType.HeavyBot;
+    }
+
+    private void SpawnItemInRoom(Room room, Item2D.ItemType itemType)
+    {
+        if (itemSpawner == null)
+        {
+            Debug.LogWarning("[MapGenerator] ItemSpawner nincs hozzárendelve");
+            return;
+        }
+
+        // Érvényes spawn keresés
+        Vector2Int? spawnPosition = FindValidSpawnPosition(room);
+
+        if (spawnPosition.HasValue)
+        {
+            itemSpawner.SpawnItem(itemType, spawnPosition.Value);
+        }
+        else
+        {
+            Debug.LogWarning($"[MapGenerator] Nincs megfelelő spawn a tárgynak: ({room.position.x}, {room.position.y})");
+        }
+    }
+
+    private Item2D.ItemType GetRandomItemType()
+    {
+        int rand = Random.Range(0, 100);
+        
+        // 30% Heal
+        if (rand < 30) return Item2D.ItemType.Heal;
+        // 15% Weapon
+        if (rand < 45) return Item2D.ItemType.Weapon;
+        // 15% Defense
+        if (rand < 60) return Item2D.ItemType.Defense;
+        // 15% Speed
+        if (rand < 75) return Item2D.ItemType.Speed;
+        // 15% Accuracy
+        if (rand < 90) return Item2D.ItemType.Accuracy;
+        // 10% Treasure
+        return Item2D.ItemType.Treasure;
     }
 }
 

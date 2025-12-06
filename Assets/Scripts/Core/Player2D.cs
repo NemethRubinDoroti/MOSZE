@@ -2,6 +2,9 @@ using UnityEngine;
 
 public class Player2D : MonoBehaviour
 {
+    [Header("Stats Configuration")]
+    public PlayerStatsConfig statsConfig;
+    
     public Vector2Int position;
     public Stats stats;
     public SpriteRenderer spriteRenderer;
@@ -21,9 +24,15 @@ public class Player2D : MonoBehaviour
         {
             spriteRenderer.sortingOrder = 10;
         }
+        
+        // Stats config alkalmazása ha elérhető
+        if (statsConfig != null)
+        {
+            statsConfig.ApplyToStats(stats);
+        }
     }
 
-    // basic mozgás
+    // alapmozgás
     public void Move(Vector2Int direction)
     {
         Vector2Int newPosition = position + direction;

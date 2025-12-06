@@ -30,7 +30,7 @@ public class PauseMenuUI : MonoBehaviour
 
     private void OnResumeClicked()
     {
-        Debug.Log("[PauseMenuUI] Resume clicked");
+        Debug.Log("[PauseMenuUI] Folytatás gomb kattintva");
         if (GameManager2D.Instance != null)
         {
             GameManager2D.Instance.ResumeGame();
@@ -43,7 +43,7 @@ public class PauseMenuUI : MonoBehaviour
 
     private void OnMainMenuClicked()
     {
-        Debug.Log("[PauseMenuUI] Main Menu clicked");
+        Debug.Log("[PauseMenuUI] Főmenü gomb kattintva");
         if (GameManager2D.Instance != null)
         {
             GameManager2D.Instance.ResumeGame(); // Visszaállítjuk a time scale-t
