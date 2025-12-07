@@ -1,12 +1,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 
 public class PlayerController2D : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
+
+    [Header("Collision Settings")]
+    public bool verboseLogging = false;
 
     private Player2D player2D;
     private BoxCollider2D playerCollider;
@@ -16,6 +22,10 @@ public class PlayerController2D : MonoBehaviour
     private Vector2 cachedColliderSize;
     private Vector2 cachedColliderOffset;
     private bool cacheInitialized = false;
+
+#if ENABLE_INPUT_SYSTEM
+    private Keyboard keyboard;
+#endif
 
     private void Awake()
     {
@@ -32,10 +42,6 @@ public class PlayerController2D : MonoBehaviour
             playerCollider.size = new Vector2(0.3f, 0.1f);
             playerCollider.offset = new Vector2(0f, -0.5f);
             playerCollider.isTrigger = true;
-
-            // Értékek cachelése
-            cachedColliderSize = playerCollider.size;
-            cachedColliderOffset = playerCollider.offset;
         }
     }
 
@@ -47,10 +53,39 @@ public class PlayerController2D : MonoBehaviour
             Debug.LogError("[PlayerController] Player nincs hozzárendelve!");
         }
 
+        // Van-e collider
+        if (playerCollider == null)
+        {
+            playerCollider = GetComponent<BoxCollider2D>();
+            if (playerCollider == null)
+            {
+                playerCollider = gameObject.AddComponent<BoxCollider2D>();
+            }
+        }
+
+        // Collider beállítás
+        if (playerCollider != null)
+        {
+            playerCollider.size = new Vector2(0.3f, 0.1f);
+            playerCollider.offset = new Vector2(0f, -0.5f);
+            playerCollider.isTrigger = true;
+
+            // Cache
+            cachedColliderSize = playerCollider.size;
+            cachedColliderOffset = playerCollider.offset;
+        }
+
         InitializeCache();
+
+#if ENABLE_INPUT_SYSTEM
+        keyboard = Keyboard.current;
+        if (keyboard == null)
+        {
+            Debug.LogWarning("[PlayerController2D] Nem található billentyűzet?");
+        }
+#endif
     }
 
-    // teljesítmény javítás miatt cache-eljük a map generator és tilemap referenciákat
     private void InitializeCache()
     {
         if (GameManager2D.Instance != null && GameManager2D.Instance.mapGenerator != null)
@@ -73,27 +108,62 @@ public class PlayerController2D : MonoBehaviour
         if (GameManager2D.Instance != null &&
             GameManager2D.Instance.currentState != GameManager2D.GameState.Playing)
         {
+            if (verboseLogging)
+            {
+                Debug.Log($"[PlayerController2D] Mozgás akadályozva - GameState: {GameManager2D.Instance.currentState}");
+            }
             return;
         }
 
-        // Cache inicializálása ha még nem történt meg
+        // Combat ellenőrzés - ne engedjük a mozgást, ha harc van aktív
+        if (GameManager2D.Instance != null &&
+            GameManager2D.Instance.combatManager != null)
+        {
+            CombatManager.CombatState combatState = GameManager2D.Instance.combatManager.currentState;
+            if (combatState != CombatManager.CombatState.None)
+            {
+                // Debug log csak ha valóban blokkolva van (ne spam-eljünk)
+                if (verboseLogging)
+                {
+                    Debug.Log($"[PlayerController2D] Mozgás akadályozva - Combat state: {combatState}");
+                }
+                return;
+            }
+        }
+
         if (!cacheInitialized)
         {
             InitializeCache();
         }
 
         HandleSmoothMovement();
+
+        // Túszok és tárgyak összegyűjtése
+        CheckForHostages();
+        CheckForItems();
     }
 
     private void HandleSmoothMovement()
     {
         Vector2 input = Vector2.zero;
 
-        // Input
-        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) input.y += 1f;
-        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) input.y -= 1f;
-        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) input.x -= 1f;
-        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) input.x += 1f;
+#if ENABLE_INPUT_SYSTEM
+        if (keyboard != null)
+        {
+            if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) input.y += 1f;
+            if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) input.y -= 1f;
+            if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) input.x -= 1f;
+            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) input.x += 1f;
+        }
+        else
+#endif
+        {
+            // Fallback to legacy input
+            if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) input.y += 1f;
+            if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) input.y -= 1f;
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) input.x -= 1f;
+            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) input.x += 1f;
+        }
 
         if (input != Vector2.zero)
         {
@@ -101,7 +171,13 @@ public class PlayerController2D : MonoBehaviour
             Vector3 movement = new Vector3(input.x, input.y, 0) * moveSpeed * Time.deltaTime;
             Vector3 newPosition = transform.position + movement;
 
-            // Érintkezés?
+            // Debug: logoljuk, hogy van input
+            if (verboseLogging)
+            {
+                Debug.Log($"[PlayerController2D] Input: {input}, cél: {newPosition}");
+            }
+
+            // Collision check - csak grid check
             if (CanMoveTo(newPosition))
             {
                 transform.position = newPosition;
@@ -109,10 +185,6 @@ public class PlayerController2D : MonoBehaviour
                 {
                     player2D.position = Vector2Int.RoundToInt(newPosition);
                 }
-
-                // Túszok és tárgyak összegyűjtése
-                CheckForHostages();
-                CheckForItems();
             }
         }
     }

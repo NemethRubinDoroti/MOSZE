@@ -87,9 +87,24 @@ public class MapGenerator : MonoBehaviour
             if (!overlaps)
             {
                 rooms.Add(newRoom);
+                FillRoom(newRoom);
             }
 
             attempts++;
+        }
+    }
+
+    private void FillRoom(Room room)
+    {
+        for (int x = room.position.x; x < room.position.x + room.width; x++)
+        {
+            for (int y = room.position.y; y < room.position.y + room.height; y++)
+            {
+                if (x >= 0 && x < mapWidth && y >= 0 && y < mapHeight)
+                {
+                    map[x, y] = true;
+                }
+            }
         }
     }
 
