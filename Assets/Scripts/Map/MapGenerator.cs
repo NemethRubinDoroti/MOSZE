@@ -228,6 +228,42 @@ public class MapGenerator : MonoBehaviour
         return map[position.x, position.y];
     }
 
+    public void SpawnBossIfAllHostagesRescued()
+    {
+        if (!spawnBossInLastRoom)
+        {
+            return;
+        }
+        
+        // Ellenőrizzük, hogy minden túsz meg van-e mentve
+        if (HostageManager.Instance == null || !HostageManager.Instance.AreAllHostagesCollected())
+        {
+            return;
+        }
+        
+        // Ellenőrizzük, hogy már nincs-e boss a pályán
+        if (enemySpawner != null)
+        {
+            List<Enemy2D> enemies = enemySpawner.GetSpawnedEnemies();
+            foreach (Enemy2D enemy in enemies)
+            {
+                if (enemy != null && enemy.type == Enemy2D.EnemyType.Boss && enemy.stats != null && enemy.stats.IsAlive())
+                {
+                    // Már van boss, nem spawnolunk újat
+                    return;
+                }
+            }
+        }
+        
+        // Spawnoljuk a boss-t az utolsó szobában
+        if (rooms != null && rooms.Count > 0)
+        {
+            Room lastRoom = rooms[rooms.Count - 1];
+            SpawnEnemyInRoom(lastRoom, Enemy2D.EnemyType.Boss);
+            Debug.Log("[MapGenerator] Boss spawned! Minden túsz meg van mentve.");
+        }
+    }
+
     private void PlaceObjects()
     {
         // Meglévő ellenfelek törlése
@@ -259,13 +295,6 @@ public class MapGenerator : MonoBehaviour
         for (int i = 0; i < rooms.Count; i++)
         {
             Room room = rooms[i];
-
-            // Boss az utolsó szobába
-            if (spawnBossInLastRoom && i == rooms.Count - 1)
-            {
-                SpawnEnemyInRoom(room, Enemy2D.EnemyType.Boss);
-                continue;
-            }
 
             // Random spawn ellenségeknek
             if (Random.Range(0f, 1f) < enemySpawnChance)

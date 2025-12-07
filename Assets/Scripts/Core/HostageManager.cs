@@ -26,14 +26,27 @@ public class HostageManager : MonoBehaviour
         collectedHostages = 0;
     }
 
-    // Ha a játékos megmenti
     public void CollectHostage(Hostage2D hostage)
     {
         if (hostage == null) return;
-
+        
         collectedHostages++;
-
+        
+        if (UIManager.Instance != null && UIManager.Instance.inGameHUD != null)
+        {
+            UIManager.Instance.inGameHUD.UpdateHostageCount(collectedHostages, totalHostages);
+        }
+        
         Debug.Log($"[HostageManager] Túsz megmentve! ({collectedHostages}/{totalHostages})");
+        
+        // Ha minden túsz meg van mentve, spawnoljuk a boss-t
+        if (AreAllHostagesCollected())
+        {
+            if (GameManager2D.Instance != null && GameManager2D.Instance.mapGenerator != null)
+            {
+                GameManager2D.Instance.mapGenerator.SpawnBossIfAllHostagesRescued();
+            }
+        }
     }
 
     public int GetTotalHostages()
