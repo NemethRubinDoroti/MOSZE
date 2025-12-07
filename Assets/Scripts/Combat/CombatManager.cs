@@ -102,19 +102,33 @@ public class CombatManager : MonoBehaviour
             combatUI.HideCombatUI();
         }
 
-        // Pont hozzáadása, hullák eltakarítása, HUD vissza
         if (playerWon)
         {
-            GameManager2D.Instance.scoreSystem?.AddScore(100);
-
-            RemoveDeadEnemies();
-
-            if (UIManager.Instance != null)
+            // Ellenőrizzük, hogy a boss volt-e a harcban
+            bool bossDefeated = IsBossInCombat() && !IsBossAlive();
+            
+            if (bossDefeated)
             {
-                UIManager.Instance.ShowInGameHUD();
+                // Boss legyőzve = Győzelem!
+                if (GameManager2D.Instance != null)
+                {
+                    GameManager2D.Instance.WinGame();
+                }
             }
-
-            Time.timeScale = 1f;
+            else
+            {
+                // Normál ellenség legyőzve, folytatjuk a játékot
+                GameManager2D.Instance.scoreSystem?.AddScore(100);
+                
+                RemoveDeadEnemies();
+                
+                if (UIManager.Instance != null)
+                {
+                    UIManager.Instance.ShowInGameHUD();
+                }
+                
+                Time.timeScale = 1f;
+            }
         }
         else if (!playerAlive)
         {
@@ -407,6 +421,37 @@ public class CombatManager : MonoBehaviour
             }
         }
         return playerCombatant != null && playerCombatant.isAlive;
+    }
+
+    private bool IsBossInCombat()
+    {
+        if (enemy2DMap == null) return false;
+        
+        foreach (var kvp in enemy2DMap)
+        {
+            if (kvp.Value != null && kvp.Value.type == Enemy2D.EnemyType.Boss)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private bool IsBossAlive()
+    {
+        if (enemy2DMap == null) return false;
+        
+        foreach (var kvp in enemy2DMap)
+        {
+            if (kvp.Value != null && kvp.Value.type == Enemy2D.EnemyType.Boss)
+            {
+                if (kvp.Value.stats != null && kvp.Value.stats.IsAlive())
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void EndTurn()

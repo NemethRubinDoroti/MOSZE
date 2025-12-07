@@ -30,7 +30,7 @@ public class GameOverUI : MonoBehaviour
             mainMenuButton.onClick.AddListener(OnMainMenuClicked);
     }
 
-    public void OnShow(int finalScore)
+    public void OnShow(int finalScore, bool isVictory = false)
     {
         currentFinalScore = finalScore;
 
@@ -40,9 +40,19 @@ public class GameOverUI : MonoBehaviour
             finalScoreText.text = $"Végső pontszám: {finalScore}";
         }
 
+        // Különböző szöveg győzelem/vereség esetén
         if (gameOverText != null)
         {
-            gameOverText.text = "Game Over";
+            if (isVictory)
+            {
+                gameOverText.text = "Győztél!";
+                gameOverText.color = Color.green;
+            }
+            else
+            {
+                gameOverText.text = "Elbuktál!";
+                gameOverText.color = Color.red;
+            }
         }
 
         // Alapértelmezett játékosnév

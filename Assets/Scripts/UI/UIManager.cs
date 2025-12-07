@@ -71,13 +71,13 @@ public class UIManager : MonoBehaviour
     }
 
 
-    public void ShowGameOverMenu(int finalScore)
+    public void ShowGameOverMenu(int finalScore, bool isVictory = false)
     {
         HideAllMenus();
         if (gameOverUI != null)
         {
             gameOverUI.gameObject.SetActive(true);
-            gameOverUI.OnShow(finalScore);
+            gameOverUI.OnShow(finalScore, isVictory);
         }
     }
 
@@ -139,7 +139,7 @@ public class UIManager : MonoBehaviour
     }
 
 
-    public void OnGameStateChanged(GameManager2D.GameState newState)
+    public void OnGameStateChanged(GameManager2D.GameState newState, bool isVictory = false)
     {
         switch (newState)
         {
@@ -157,7 +157,7 @@ public class UIManager : MonoBehaviour
                 HideInGameHUD();
                 if (GameManager2D.Instance != null && GameManager2D.Instance.scoreSystem != null)
                 {
-                    ShowGameOverMenu(GameManager2D.Instance.scoreSystem.currentScore);
+                    ShowGameOverMenu(GameManager2D.Instance.scoreSystem.currentScore, isVictory);
                 }
                 break;
         }

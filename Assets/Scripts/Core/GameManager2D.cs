@@ -110,14 +110,31 @@ public class GameManager2D : MonoBehaviour
 
     public void EndGame()
     {
+        EndGame(false); // Vereség
+    }
+    
+    public void EndGame(bool isVictory)
+    {
         currentState = GameState.GameOver;
         Time.timeScale = 0f;
         
         // UI frissítése
         if (UIManager.Instance != null)
         {
-            UIManager.Instance.OnGameStateChanged(currentState);
+            UIManager.Instance.OnGameStateChanged(currentState, isVictory);
         }
+    }
+    
+    public void WinGame()
+    {
+        // Győzelem bónusz pontok
+        if (scoreSystem != null)
+        {
+            scoreSystem.AddScore(500); // Győzelem bónusz
+        }
+        
+        EndGame(true); // Győzelem
+        Debug.Log("[GameManager2D] Győzelem! Minden túsz megmentve és a boss legyőzve!");
     }
     
     public void SaveGame()
