@@ -197,6 +197,62 @@ public class CombatManager : MonoBehaviour
             }
         }
     }
+    
+    private void GiveXPForEnemy(Enemy2D enemy)
+    {
+        if (enemy == null || ExperienceSystem.Instance == null)
+        {
+            return;
+        }
+        
+        // XP lekérése az EnemyTemplate-ből
+        int xpReward = GetXPFromEnemy(enemy);
+        
+        if (xpReward > 0)
+        {
+            ExperienceSystem.Instance.AddXP(xpReward);
+            
+            // UI frissítése (ha van combat UI)
+            if (combatUI != null)
+            {
+                combatUI.AddCombatLog($"XP kapott: +{xpReward} XP");
+            }
+        }
+    }
+    
+    private int GetXPFromEnemy(Enemy2D enemy)
+    {
+        if (enemy == null || GameManager2D.Instance == null)
+        {
+            return 0;
+        }
+        
+        EnemySpawner spawner = GameManager2D.Instance.mapGenerator?.enemySpawner;
+        if (spawner == null)
+        {
+            return 0;
+        }
+        
+        // Template lekérése típus alapján
+        EnemyTemplate template = null;
+        switch (enemy.type)
+        {
+            case Enemy2D.EnemyType.SecurityBot:
+                template = spawner.securityBotTemplate;
+                break;
+            case Enemy2D.EnemyType.PatrolBot:
+                template = spawner.patrolBotTemplate;
+                break;
+            case Enemy2D.EnemyType.HeavyBot:
+                template = spawner.heavyBotTemplate;
+                break;
+            case Enemy2D.EnemyType.Boss:
+                template = spawner.bossTemplate;
+                break;
+        }
+        
+        return template != null ? template.experienceReward : 0;
+    }
 
     // Cselekvések végrehajtása
     public void ProcessAction(Action action)
@@ -219,6 +275,12 @@ public class CombatManager : MonoBehaviour
             // Ha egy ellenséget támadtunk és meghalt, azonnal töröljük
             if (!action.target.isAlive)
             {
+                // XP adás ellenség legyőzésekor
+                if (enemy2DMap != null && enemy2DMap.ContainsKey(action.target))
+                {
+                    GiveXPForEnemy(enemy2DMap[action.target]);
+                }
+                
                 RemoveDeadEnemy(action.target);
             }
         }
@@ -391,6 +453,12 @@ public class CombatManager : MonoBehaviour
                 // Ha az ellenség meghalt, töröljük (ez akkor történhet, ha a játékos visszatámadott)
                 if (!enemy.isAlive)
                 {
+                    // XP adás ellenség legyőzésekor
+                    if (enemy2DMap != null && enemy2DMap.ContainsKey(enemy))
+                    {
+                        GiveXPForEnemy(enemy2DMap[enemy]);
+                    }
+                    
                     RemoveDeadEnemy(enemy);
                 }
                 // Kis késleltetés az ellenség cselekvései között a láthatóság érdekében

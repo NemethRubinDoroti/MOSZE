@@ -17,6 +17,8 @@ public class PlayerData2D
     public int health;
     public int maxHealth;
     public StatsData stats;
+    public int level = 1;
+    public int currentXP = 0;
 }
 
 [System.Serializable]

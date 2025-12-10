@@ -20,6 +20,7 @@ public class GameManager2D : MonoBehaviour
     public ScoreSystem scoreSystem;
     public HostageManager hostageManager;
     public ItemManager itemManager;
+    public ExperienceSystem experienceSystem;
     public int currentSeed;
 
     private void Awake()
@@ -62,6 +63,12 @@ public class GameManager2D : MonoBehaviour
         if (scoreSystem != null)
         {
             scoreSystem.ResetScore();
+        }
+        
+        // XP rendszer resetelése
+        if (experienceSystem != null)
+        {
+            experienceSystem.Reset();
         }
         
         mapGenerator.GenerateMap(currentSeed);
@@ -158,7 +165,9 @@ public class GameManager2D : MonoBehaviour
                     defense = player.stats.defense,
                     speed = player.stats.speed,
                     accuracy = player.stats.accuracy
-                }
+                },
+                level = experienceSystem != null ? experienceSystem.currentLevel : 1,
+                currentXP = experienceSystem != null ? experienceSystem.currentXP : 0
             },
             mapData = new MapData2D
             {
@@ -210,6 +219,14 @@ public class GameManager2D : MonoBehaviour
                     player.stats.speed = data.playerData.stats.speed;
                     player.stats.accuracy = data.playerData.stats.accuracy;
                 }
+            }
+            
+            // XP és szint visszaállítása
+            if (experienceSystem != null)
+            {
+                experienceSystem.currentLevel = data.playerData.level;
+                experienceSystem.currentXP = data.playerData.currentXP;
+                experienceSystem.CalculateXPToNextLevel();
             }
         }
         
