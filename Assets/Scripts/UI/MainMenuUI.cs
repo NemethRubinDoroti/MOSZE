@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class MainMenuUI : MonoBehaviour
 {
@@ -127,6 +128,7 @@ public class MainMenuUI : MonoBehaviour
     {
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (highscorePanel != null) highscorePanel.SetActive(false);
+        if (newGamePanel != null) newGamePanel.SetActive(false);
 
         // Visszaállítjuk a főmenü gombokat
         ShowMainMenuButtons();
