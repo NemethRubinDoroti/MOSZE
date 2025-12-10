@@ -45,6 +45,7 @@ public class MapGenerator : MonoBehaviour
     private int currentSeed;
     private List<Room> rooms;
     private bool[,] map;
+    private List<CorridorData> savedCorridors; // Folyosók tárolása exportáláshoz
 
     public void GenerateMap(int seed)
     {
@@ -53,6 +54,7 @@ public class MapGenerator : MonoBehaviour
 
         rooms = new List<Room>();
         map = new bool[mapWidth, mapHeight];
+        savedCorridors = new List<CorridorData>();
 
         GenerateRooms();
         GenerateCorridors();
@@ -131,6 +133,9 @@ public class MapGenerator : MonoBehaviour
     {
         int x = start.x;
         int y = start.y;
+        
+        List<Vector2Int> path = new List<Vector2Int>();
+        path.Add(start);
 
         // Függőleges
         while (x != end.x)
@@ -138,6 +143,7 @@ public class MapGenerator : MonoBehaviour
             if (x >= 0 && x < mapWidth && y >= 0 && y < mapHeight)
             {
                 map[x, y] = true;
+                path.Add(new Vector2Int(x, y));
             }
             x += (end.x > start.x) ? 1 : -1;
         }
@@ -148,9 +154,24 @@ public class MapGenerator : MonoBehaviour
             if (x >= 0 && x < mapWidth && y >= 0 && y < mapHeight)
             {
                 map[x, y] = true;
+                path.Add(new Vector2Int(x, y));
             }
             y += (end.y > start.y) ? 1 : -1;
         }
+        
+        path.Add(end);
+        
+        // Folyosó mentése exportáláshoz
+        if (savedCorridors == null)
+        {
+            savedCorridors = new List<CorridorData>();
+        }
+        savedCorridors.Add(new CorridorData
+        {
+            start = start,
+            end = end,
+            path = path
+        });
     }
 
     private void PlaceTiles()
@@ -447,6 +468,253 @@ public class MapGenerator : MonoBehaviour
         if (rand < 90) return Item2D.ItemType.Accuracy;
         // 10% Treasure
         return Item2D.ItemType.Treasure;
+    }
+    
+    // ========== PÁLYA EXPORT/IMPORT ==========
+
+    public MapExportData ExportMap()
+    {
+        MapExportData exportData = new MapExportData
+        {
+            seed = currentSeed,
+            width = mapWidth,
+            height = mapHeight,
+            rooms = new List<RoomData>(),
+            corridors = savedCorridors != null ? new List<CorridorData>(savedCorridors) : new List<CorridorData>(),
+            enemies = new List<EnemySpawnData>(),
+            hostages = new List<HostageSpawnData>(),
+            items = new List<ItemSpawnData>()
+        };
+        
+        // Szobák exportálása
+        if (rooms != null)
+        {
+            foreach (Room room in rooms)
+            {
+                exportData.rooms.Add(new RoomData
+                {
+                    position = room.position,
+                    width = room.width,
+                    height = room.height,
+                    roomType = (int)room.type,
+                    doors = new List<Vector2Int>(room.doors)
+                });
+            }
+        }
+        
+        // Ellenségek exportálása
+        if (enemySpawner != null)
+        {
+            List<Enemy2D> enemies = enemySpawner.GetSpawnedEnemies();
+            foreach (Enemy2D enemy in enemies)
+            {
+                if (enemy != null && enemy.gameObject != null && enemy.stats != null && enemy.stats.IsAlive())
+                {
+                    exportData.enemies.Add(new EnemySpawnData
+                    {
+                        position = enemy.position,
+                        enemyType = (int)enemy.type
+                    });
+                }
+            }
+        }
+        
+        // Túsok exportálása
+        if (hostageSpawner != null)
+        {
+            List<Hostage2D> hostages = hostageSpawner.GetSpawnedHostages();
+            foreach (Hostage2D hostage in hostages)
+            {
+                if (hostage != null)
+                {
+                    exportData.hostages.Add(new HostageSpawnData
+                    {
+                        position = hostage.position
+                    });
+                }
+            }
+        }
+        
+        // Tárgyak exportálása
+        if (itemSpawner != null)
+        {
+            List<Item2D> items = itemSpawner.GetSpawnedItems();
+            foreach (Item2D item in items)
+            {
+                if (item != null)
+                {
+                    exportData.items.Add(new ItemSpawnData
+                    {
+                        position = item.position,
+                        itemType = (int)item.itemType
+                    });
+                }
+            }
+        }
+        
+        return exportData;
+    }
+    
+    // exportálás JSON fájlba
+    public void ExportMapToJSON(string fileName = "map_export")
+    {
+        MapExportData data = ExportMap();
+        if (data == null)
+        {
+            Debug.LogError("[MapGenerator] ExportMap() NULL-t adott vissza! Nem lehet exportálni.");
+            return;
+        }
+        
+        if (SaveSystem.Instance != null)
+        {
+            SaveSystem.Instance.ExportMapToJSON(data, fileName);
+        }
+        else
+        {
+            Debug.LogError("[MapGenerator] SaveSystem.Instance nem található az exportáláshoz!");
+        }
+    }
+    
+    // importálás JSON fájlból
+    public void ImportMapFromJSON(string fileName = "map_export", MapExportData directData = null)
+    {
+        MapExportData data = directData;
+        
+        // Ha nincs közvetlen adat, fájlból töltjük
+        if (data == null)
+        {
+            if (SaveSystem.Instance == null)
+            {
+                Debug.LogError("[MapGenerator] SaveSystem.Instance nem található az importáláshoz!");
+                return;
+            }
+            
+            data = SaveSystem.Instance.ImportMapFromJSON(fileName);
+            if (data == null)
+            {
+                Debug.LogError("[MapGenerator] Nem sikerült betölteni a pálya adatokat!");
+                return;
+            }
+        }
+        
+        // Alapadatok beállítása
+        currentSeed = data.seed;
+        mapWidth = data.width;
+        mapHeight = data.height;
+        
+        // Szobák visszaállítása
+        rooms = new List<Room>();
+        if (data.rooms != null)
+        {
+            foreach (RoomData roomData in data.rooms)
+            {
+                Room room = new Room(roomData.position, roomData.width, roomData.height, (Room.RoomType)roomData.roomType);
+                if (roomData.doors != null)
+                {
+                    foreach (Vector2Int door in roomData.doors)
+                    {
+                        room.AddDoor(door);
+                    }
+                }
+                rooms.Add(room);
+            }
+        }
+        
+        // Map array újraépítése
+        map = new bool[mapWidth, mapHeight];
+        foreach (Room room in rooms)
+        {
+            FillRoom(room);
+        }
+        
+        // Folyosók visszaépítése
+        savedCorridors = data.corridors != null ? new List<CorridorData>(data.corridors) : new List<CorridorData>();
+        if (data.corridors != null)
+        {
+            foreach (CorridorData corridor in data.corridors)
+            {
+                if (corridor.path != null)
+                {
+                    foreach (Vector2Int pos in corridor.path)
+                    {
+                        if (pos.x >= 0 && pos.x < mapWidth && pos.y >= 0 && pos.y < mapHeight)
+                        {
+                            map[pos.x, pos.y] = true;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Csempék lehelyezése
+        PlaceTiles();
+        
+        // Spawner
+        PlaceObjectsFromData(data);
+        
+        if (directData == null)
+        {
+            Debug.Log($"[MapGenerator] Pálya importálva: {fileName}");
+        }
+        else
+        {
+            Debug.Log("[MapGenerator] Pálya importálva közvetlen adatból");
+        }
+    }
+    
+    private void PlaceObjectsFromData(MapExportData data)
+    {
+        // Tiszta lap
+        if (enemySpawner != null)
+        {
+            enemySpawner.ClearAllEnemies();
+        }
+        if (hostageSpawner != null)
+        {
+            hostageSpawner.ClearAllHostages();
+        }
+        if (itemSpawner != null)
+        {
+            itemSpawner.ClearAllItems();
+        }
+        
+        int totalHostages = 0;
+        
+        // Ellenségek spawnolása
+        if (data.enemies != null && enemySpawner != null)
+        {
+            foreach (EnemySpawnData enemyData in data.enemies)
+            {
+                Enemy2D.EnemyType enemyType = (Enemy2D.EnemyType)enemyData.enemyType;
+                enemySpawner.SpawnEnemy(enemyType, enemyData.position);
+            }
+        }
+        
+        // Túszok spawnolása
+        if (data.hostages != null && hostageSpawner != null)
+        {
+            foreach (HostageSpawnData hostageData in data.hostages)
+            {
+                hostageSpawner.SpawnHostage(hostageData.position);
+                totalHostages++;
+            }
+        }
+        
+        // Tárgyak spawnolása
+        if (data.items != null && itemSpawner != null)
+        {
+            foreach (ItemSpawnData itemData in data.items)
+            {
+                Item2D.ItemType itemType = (Item2D.ItemType)itemData.itemType;
+                itemSpawner.SpawnItem(itemType, itemData.position);
+            }
+        }
+        
+        // HostageManager inicializálása
+        if (HostageManager.Instance != null)
+        {
+            HostageManager.Instance.InitializeHostageCount(totalHostages);
+        }
     }
 }
 
