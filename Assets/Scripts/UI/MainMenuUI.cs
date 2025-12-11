@@ -14,6 +14,7 @@ public class MainMenuUI : MonoBehaviour
     [Header("Sub Panels")]
     public GameObject settingsPanel;
     public GameObject highscorePanel;
+    public GameObject newGamePanel;
 
     [Header("Highscore UI")]
     public Transform highscoreContent;
@@ -54,6 +55,18 @@ public class MainMenuUI : MonoBehaviour
 
         if (settingsBackButton != null)
             settingsBackButton.onClick.AddListener(HideSubPanels);
+            
+        if (randomGameButton != null)
+            randomGameButton.onClick.AddListener(OnRandomGameClicked);
+            
+        if (seedGameButton != null)
+            seedGameButton.onClick.AddListener(OnSeedGameClicked);
+            
+        if (jsonGameButton != null)
+            jsonGameButton.onClick.AddListener(OnJsonGameClicked);
+            
+        if (newGameBackButton != null)
+            newGameBackButton.onClick.AddListener(HideSubPanels);
     }
 
     public void OnShow()
@@ -65,12 +78,114 @@ public class MainMenuUI : MonoBehaviour
     private void OnNewGameClicked()
     {
         Debug.Log("[MainMenuUI] Új játék kattintva");
+        // Megjelenítjük az új játék opciók paneljét
+        if (newGamePanel != null)
+        {
+            newGamePanel.SetActive(true);
+            LoadAvailableMaps();
+        }
+        
+        // Elrejtjük a főmenü gombokat
+        HideMainMenuButtons();
+    }
+    
+    private void OnRandomGameClicked()
+    {
+        Debug.Log("[MainMenuUI] Véletlenszerű játék kattintva");
         if (GameManager2D.Instance != null)
         {
-            GameManager2D.Instance.StartGame();
+            GameManager2D.Instance.StartGame(); // Random seed
             if (UIManager.Instance != null)
             {
                 UIManager.Instance.OnGameStateChanged(GameManager2D.GameState.Playing);
+            }
+        }
+    }
+    
+    private void OnSeedGameClicked()
+    {
+        Debug.Log("[MainMenuUI] Seedelt játék kattintva");
+        if (seedInputField == null || string.IsNullOrEmpty(seedInputField.text))
+        {
+            Debug.LogWarning("[MainMenuUI] Nincs megadva seed!");
+            return;
+        }
+        
+        if (int.TryParse(seedInputField.text, out int seed))
+        {
+            if (GameManager2D.Instance != null)
+            {
+                GameManager2D.Instance.StartGameWithSeed(seed);
+                if (UIManager.Instance != null)
+                {
+                    UIManager.Instance.OnGameStateChanged(GameManager2D.GameState.Playing);
+                }
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[MainMenuUI] Érvénytelen seed érték!");
+        }
+    }
+    
+    private void OnJsonGameClicked()
+    {
+        Debug.Log("[MainMenuUI] JSON játék kattintva");
+        if (mapDropdown == null)
+        {
+            Debug.LogWarning("[MainMenuUI] Map dropdown nincs beállítva!");
+            return;
+        }
+        
+        string selectedMap = mapDropdown.options[mapDropdown.value].text;
+        if (string.IsNullOrEmpty(selectedMap))
+        {
+            Debug.LogWarning("[MainMenuUI] Nincs kiválasztva pálya!");
+            return;
+        }
+        
+        if (GameManager2D.Instance != null)
+        {
+            GameManager2D.Instance.StartGameWithMap(selectedMap);
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.OnGameStateChanged(GameManager2D.GameState.Playing);
+            }
+        }
+    }
+    
+    private void LoadAvailableMaps()
+    {
+        if (mapDropdown == null) return;
+        
+        mapDropdown.ClearOptions();
+        
+        if (SaveSystem.Instance != null)
+        {
+            string[] maps = SaveSystem.Instance.GetMapList();
+            if (maps.Length == 0)
+            {
+                mapDropdown.AddOptions(new System.Collections.Generic.List<string> { "Nincs elérhető pálya" });
+                if (jsonGameButton != null)
+                {
+                    jsonGameButton.interactable = false;
+                }
+            }
+            else
+            {
+                mapDropdown.AddOptions(new System.Collections.Generic.List<string>(maps));
+                if (jsonGameButton != null)
+                {
+                    jsonGameButton.interactable = true;
+                }
+            }
+        }
+        else
+        {
+            mapDropdown.AddOptions(new System.Collections.Generic.List<string> { "SaveSystem nem elérhető" });
+            if (jsonGameButton != null)
+            {
+                jsonGameButton.interactable = false;
             }
         }
     }

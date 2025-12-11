@@ -50,6 +50,12 @@ public class GameManager2D : MonoBehaviour
 
     public void StartGame()
     {
+        // Random seed-del indít
+        StartGameWithSeed(Random.Range(0, int.MaxValue));
+    }
+    
+    public void StartGameWithSeed(int seed)
+    {
         if (mapGenerator == null)
         {
             Debug.LogError("[GameManager2D] HIBA: MapGenerator NULL! Nem lehet elindítani a játékot.");
@@ -57,7 +63,7 @@ public class GameManager2D : MonoBehaviour
         }
         
         currentState = GameState.Playing;
-        currentSeed = Random.Range(0, int.MaxValue);
+        currentSeed = seed;
         
         // Pontszám resetelése
         if (scoreSystem != null)
@@ -73,6 +79,68 @@ public class GameManager2D : MonoBehaviour
         
         mapGenerator.GenerateMap(currentSeed);
         
+        SetupPlayerPosition();
+        
+        // UI frissítése
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.OnGameStateChanged(currentState);
+        }
+        
+        Debug.Log($"[GameManager2D] Játék elindítva seed-del: {currentSeed}");
+    }
+    
+    public void StartGameWithMap(string mapFileName)
+    {
+        if (mapGenerator == null)
+        {
+            Debug.LogError("[GameManager2D] HIBA: MapGenerator NULL! Nem lehet elindítani a játékot.");
+            return;
+        }
+        
+        if (string.IsNullOrEmpty(mapFileName))
+        {
+            Debug.LogError("[GameManager2D] HIBA: Üres pálya fájlnév!");
+            return;
+        }
+        
+        currentState = GameState.Playing;
+        
+        // Pontszám resetelése
+        if (scoreSystem != null)
+        {
+            scoreSystem.ResetScore();
+        }
+        
+        // XP rendszer resetelése
+        if (experienceSystem != null)
+        {
+            experienceSystem.Reset();
+        }
+        
+        // Pálya importálása JSON-ból
+        mapGenerator.ImportMapFromJSON(mapFileName);
+        
+        // Seed beállítása az importált pályából
+        MapExportData mapData = mapGenerator.ExportMap();
+        if (mapData != null)
+        {
+            currentSeed = mapData.seed;
+        }
+        
+        SetupPlayerPosition();
+        
+        // UI frissítése
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.OnGameStateChanged(currentState);
+        }
+        
+        Debug.Log($"[GameManager2D] Játék elindítva pályával: {mapFileName}");
+    }
+    
+    private void SetupPlayerPosition()
+    {
         if (player != null && mapGenerator != null)
         {
             var rooms = mapGenerator.GetRooms();
@@ -82,12 +150,6 @@ public class GameManager2D : MonoBehaviour
                 player.position = startPos;
                 player.transform.position = new Vector3(startPos.x, startPos.y, 0);
             }
-        }
-        
-        // UI frissítése
-        if (UIManager.Instance != null)
-        {
-            UIManager.Instance.OnGameStateChanged(currentState);
         }
     }
 
@@ -134,13 +196,12 @@ public class GameManager2D : MonoBehaviour
     
     public void WinGame()
     {
-        // Győzelem bónusz pontok
         if (scoreSystem != null)
         {
-            scoreSystem.AddScore(500); // Győzelem bónusz
+            scoreSystem.AddScore(500);
         }
         
-        EndGame(true); // Győzelem
+        EndGame(true);
         Debug.Log("[GameManager2D] Győzelem! Minden túsz megmentve és a boss legyőzve!");
     }
     
@@ -151,6 +212,9 @@ public class GameManager2D : MonoBehaviour
             Debug.LogWarning("Nem lehet menteni a játékot: hiányzó komponensek");
             return;
         }
+        
+        // Pálya exportálása
+        MapExportData fullMapData = mapGenerator.ExportMap();
         
         GameData2D data = new GameData2D
         {
@@ -173,7 +237,8 @@ public class GameManager2D : MonoBehaviour
             {
                 seed = currentSeed,
                 width = mapGenerator.mapWidth,
-                height = mapGenerator.mapHeight
+                height = mapGenerator.mapHeight,
+                fullMapData = fullMapData
             },
             gameData = new GameData
             {
@@ -234,7 +299,17 @@ public class GameManager2D : MonoBehaviour
         if (mapGenerator != null && data.mapData != null)
         {
             currentSeed = data.mapData.seed;
-            mapGenerator.GenerateMap(currentSeed);
+            
+            // Ha van teljes pálya adat, importáljuk, különben generáljuk seed alapján
+            if (data.mapData.fullMapData != null)
+            {
+                mapGenerator.ImportMapFromJSON("", data.mapData.fullMapData);
+            }
+            else
+            {
+                // Seed alapú generálás
+                mapGenerator.GenerateMap(currentSeed);
+            }
         }
         
         // Pontszám visszaállítása
@@ -266,7 +341,6 @@ public class GameManager2D : MonoBehaviour
         currentSeed = Random.Range(0, int.MaxValue);
         mapGenerator.GenerateMap(currentSeed);
         
-        // Reset player position to first room center
         if (player != null && mapGenerator != null)
         {
             var rooms = mapGenerator.GetRooms();

@@ -6,6 +6,7 @@ public class PauseMenuUI : MonoBehaviour
 {
     [Header("UI Elements")]
     public Button resumeButton;
+    public Button exportMapButton;
     public Button mainMenuButton;
 
     private void Start()
@@ -17,6 +18,9 @@ public class PauseMenuUI : MonoBehaviour
     {
         if (resumeButton != null)
             resumeButton.onClick.AddListener(OnResumeClicked);
+
+        if (exportMapButton != null)
+            exportMapButton.onClick.AddListener(OnExportMapClicked);
 
         if (mainMenuButton != null)
             mainMenuButton.onClick.AddListener(OnMainMenuClicked);
@@ -39,6 +43,34 @@ public class PauseMenuUI : MonoBehaviour
                 UIManager.Instance.HidePauseMenu();
             }
         }
+    }
+
+    private void OnExportMapClicked()
+    {
+        Debug.Log("[PauseMenuUI] Export Map clicked");
+        
+        if (GameManager2D.Instance == null)
+        {
+            Debug.LogError("[PauseMenuUI] GameManager2D.Instance == NULL!");
+            return;
+        }
+        
+        if (GameManager2D.Instance.mapGenerator == null)
+        {
+            Debug.LogError("[PauseMenuUI] GameManager2D.Instance.mapGenerator == NULL!");
+            return;
+        }
+        
+        if (SaveSystem.Instance == null)
+        {
+            Debug.LogError("[PauseMenuUI] SaveSystem.Instance == NULL!");
+            return;
+        }
+        
+        // Fájlnév generálása seed alapján
+        string fileName = $"map_seed_{GameManager2D.Instance.currentSeed}";
+        Debug.Log($"[PauseMenuUI] Exportálás indítása: {fileName}");
+        GameManager2D.Instance.mapGenerator.ExportMapToJSON(fileName);
     }
 
     private void OnMainMenuClicked()
