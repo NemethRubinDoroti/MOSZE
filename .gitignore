@@ -60,6 +60,14 @@ crashlytics-build.properties
 [Aa]ssets/**/*.tga
 [Aa]ssets/**/*.tiff
 [Aa]ssets/**/*.psd
+!Assets/Sprites/**/*.png
+!Assets/Sprites/**/*.jpg
+!Assets/Sprites/**/*.jpeg
+!Assets/Sprites/**/*.gif
+!Assets/Sprites/**/*.bmp
+!Assets/Sprites/**/*.tga
+!Assets/Sprites/**/*.tiff
+!Assets/Sprites/**/*.psd
 [Aa]ssets/**/*.mat
 [Aa]ssets/**/*.shader
 [Aa]ssets/**/*.controller
