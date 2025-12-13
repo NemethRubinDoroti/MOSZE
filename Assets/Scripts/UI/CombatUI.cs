@@ -635,13 +635,27 @@ public class CombatUI : MonoBehaviour
             string currentText = combatLogText.text;
             combatLogText.text = message + "\n" + currentText;
             
-            // Combat log limit
+            // Combat log limit: maximum 4 sor
             string[] lines = combatLogText.text.Split('\n');
-            if (lines.Length > 10)
+            // Szűrjük ki az üres sorokat és csak a nem üres sorokat számoljuk
+            System.Collections.Generic.List<string> nonEmptyLines = new System.Collections.Generic.List<string>();
+            foreach (string line in lines)
             {
-                combatLogText.text = string.Join("\n", lines, 0, 10);
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    nonEmptyLines.Add(line);
+                }
+            }
+            
+            // Ha több mint 4 sor van, csak az első 4-et tartjuk meg (legújabbak)
+            if (nonEmptyLines.Count > 4)
+            {
+                combatLogText.text = string.Join("\n", nonEmptyLines.GetRange(0, 4));
+            }
+            else
+            {
+                combatLogText.text = string.Join("\n", nonEmptyLines);
             }
         }
     }
 }
-

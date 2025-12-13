@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -46,6 +47,7 @@ public class MapGenerator : MonoBehaviour
     private List<Room> rooms;
     private bool[,] map;
     private List<CorridorData> savedCorridors; // Folyosók tárolása exportáláshoz
+    private HashSet<Vector2Int> occupiedPositions; // Foglalt pozíciók (ellenségek, túsok, tárgyak)
 
     public void GenerateMap(int seed)
     {
@@ -110,11 +112,6 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
-    private void GenerateCorridors()
-    {
-        ConnectRooms();
-    }
-
     private void ConnectRooms()
     {
         if (rooms.Count < 2) return;
@@ -129,11 +126,16 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
+    private void GenerateCorridors()
+    {
+        ConnectRooms();
+    }
+
     private void BuildLShapedCorridor(Vector2Int start, Vector2Int end)
     {
         int x = start.x;
         int y = start.y;
-        
+
         List<Vector2Int> path = new List<Vector2Int>();
         path.Add(start);
 
@@ -158,9 +160,9 @@ public class MapGenerator : MonoBehaviour
             }
             y += (end.y > start.y) ? 1 : -1;
         }
-        
+
         path.Add(end);
-        
+
         // Folyosó mentése exportáláshoz
         if (savedCorridors == null)
         {
@@ -255,13 +257,13 @@ public class MapGenerator : MonoBehaviour
         {
             return;
         }
-        
+
         // Ellenőrizzük, hogy minden túsz meg van-e mentve
         if (HostageManager.Instance == null || !HostageManager.Instance.AreAllHostagesCollected())
         {
             return;
         }
-        
+
         // Ellenőrizzük, hogy már nincs-e boss a pályán
         if (enemySpawner != null)
         {
@@ -275,7 +277,7 @@ public class MapGenerator : MonoBehaviour
                 }
             }
         }
-        
+
         // Spawnoljuk a boss-t az utolsó szobában
         if (rooms != null && rooms.Count > 0)
         {
@@ -305,10 +307,8 @@ public class MapGenerator : MonoBehaviour
             itemSpawner.ClearAllItems();
         }
 
-        if (rooms == null || rooms.Count == 0)
-        {
-            return;
-        }
+        // Inicializáljuk a foglalt pozíciók halmazát
+        occupiedPositions = new HashSet<Vector2Int>();
 
         int totalHostages = 0;
 
@@ -317,7 +317,11 @@ public class MapGenerator : MonoBehaviour
         {
             Room room = rooms[i];
 
-            // Random spawn ellenségeknek
+            if (i == 0)
+            {
+                continue;
+            }
+
             if (Random.Range(0f, 1f) < enemySpawnChance)
             {
                 int enemiesToSpawn = Random.Range(minEnemiesPerRoom, maxEnemiesPerRoom + 1);
@@ -328,7 +332,6 @@ public class MapGenerator : MonoBehaviour
                 }
             }
 
-            // Random spawn túszoknak
             if (Random.Range(0f, 1f) < hostageSpawnChance)
             {
                 int hostagesToSpawn = Random.Range(minHostagesPerRoom, maxHostagesPerRoom + 1);
@@ -339,7 +342,6 @@ public class MapGenerator : MonoBehaviour
                 }
             }
 
-            // Random spawn tárgyaknak
             if (Random.Range(0f, 1f) < itemSpawnChance)
             {
                 int itemsToSpawn = Random.Range(minItemsPerRoom, maxItemsPerRoom + 1);
@@ -351,11 +353,20 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
-        // Túszok számlálásához
         if (HostageManager.Instance != null)
         {
             HostageManager.Instance.InitializeHostageCount(totalHostages);
         }
+
+        foreach (Room room in rooms)
+        {
+            if (room.doors.Count == 0)
+            {
+                Vector2Int center = room.GetCenter();
+                room.AddDoor(center);
+            }
+        }
+
     }
 
     private void SpawnEnemyInRoom(Room room, Enemy2D.EnemyType enemyType)
@@ -372,6 +383,8 @@ public class MapGenerator : MonoBehaviour
         if (spawnPosition.HasValue)
         {
             enemySpawner.SpawnEnemy(enemyType, spawnPosition.Value);
+            // Hozzáadjuk a foglalt pozíciókhoz
+            occupiedPositions.Add(spawnPosition.Value);
         }
         else
         {
@@ -382,15 +395,15 @@ public class MapGenerator : MonoBehaviour
     private Vector2Int? FindValidSpawnPosition(Room room)
     {
         int attempts = 0;
-        int maxAttempts = 50;
-
+        int maxAttempts = 100;
         while (attempts < maxAttempts)
         {
             int x = Random.Range(room.position.x + 1, room.position.x + room.width - 1);
             int y = Random.Range(room.position.y + 1, room.position.y + room.height - 1);
             Vector2Int pos = new Vector2Int(x, y);
 
-            if (IsWalkable(pos))
+            // Ellenőrizzük, hogy a pozíció walkable ÉS szabad (nincs ott semmi más)
+            if (IsWalkable(pos) && !occupiedPositions.Contains(pos))
             {
                 return pos;
             }
@@ -415,6 +428,8 @@ public class MapGenerator : MonoBehaviour
         if (spawnPosition.HasValue)
         {
             hostageSpawner.SpawnHostage(spawnPosition.Value);
+            // Hozzáadjuk a foglalt pozíciókhoz
+            occupiedPositions.Add(spawnPosition.Value);
         }
         else
         {
@@ -445,6 +460,8 @@ public class MapGenerator : MonoBehaviour
         if (spawnPosition.HasValue)
         {
             itemSpawner.SpawnItem(itemType, spawnPosition.Value);
+            // Hozzáadjuk a foglalt pozíciókhoz
+            occupiedPositions.Add(spawnPosition.Value);
         }
         else
         {
@@ -455,7 +472,7 @@ public class MapGenerator : MonoBehaviour
     private Item2D.ItemType GetRandomItemType()
     {
         int rand = Random.Range(0, 100);
-        
+
         // 30% Heal
         if (rand < 30) return Item2D.ItemType.Heal;
         // 15% Weapon
@@ -469,7 +486,7 @@ public class MapGenerator : MonoBehaviour
         // 10% Treasure
         return Item2D.ItemType.Treasure;
     }
-    
+
     // ========== PÁLYA EXPORT/IMPORT ==========
 
     public MapExportData ExportMap()
@@ -485,7 +502,7 @@ public class MapGenerator : MonoBehaviour
             hostages = new List<HostageSpawnData>(),
             items = new List<ItemSpawnData>()
         };
-        
+
         // Szobák exportálása
         if (rooms != null)
         {
@@ -501,7 +518,7 @@ public class MapGenerator : MonoBehaviour
                 });
             }
         }
-        
+
         // Ellenségek exportálása
         if (enemySpawner != null)
         {
@@ -518,7 +535,7 @@ public class MapGenerator : MonoBehaviour
                 }
             }
         }
-        
+
         // Túsok exportálása
         if (hostageSpawner != null)
         {
@@ -534,7 +551,7 @@ public class MapGenerator : MonoBehaviour
                 }
             }
         }
-        
+
         // Tárgyak exportálása
         if (itemSpawner != null)
         {
@@ -551,35 +568,39 @@ public class MapGenerator : MonoBehaviour
                 }
             }
         }
-        
+
         return exportData;
     }
-    
-    // exportálás JSON fájlba
+
     public void ExportMapToJSON(string fileName = "map_export")
     {
+        Debug.Log($"[MapGenerator] ExportMapToJSON hívva: fileName={fileName}");
+
         MapExportData data = ExportMap();
         if (data == null)
         {
             Debug.LogError("[MapGenerator] ExportMap() NULL-t adott vissza! Nem lehet exportálni.");
             return;
         }
-        
+
+        Debug.Log($"[MapGenerator] ExportMap() sikeres: {data.rooms?.Count ?? 0} szoba, {data.enemies?.Count ?? 0} ellenség");
+
         if (SaveSystem.Instance != null)
         {
+            Debug.Log("[MapGenerator] SaveSystem.Instance megtalálva, exportálás indítása...");
             SaveSystem.Instance.ExportMapToJSON(data, fileName);
         }
         else
         {
             Debug.LogError("[MapGenerator] SaveSystem.Instance nem található az exportáláshoz!");
+            Debug.LogError("[MapGenerator] Ellenőrizd, hogy a SaveSystem GameObject aktív-e a sceneben!");
         }
     }
-    
-    // importálás JSON fájlból
+
     public void ImportMapFromJSON(string fileName = "map_export", MapExportData directData = null)
     {
         MapExportData data = directData;
-        
+
         // Ha nincs közvetlen adat, fájlból töltjük
         if (data == null)
         {
@@ -588,7 +609,7 @@ public class MapGenerator : MonoBehaviour
                 Debug.LogError("[MapGenerator] SaveSystem.Instance nem található az importáláshoz!");
                 return;
             }
-            
+
             data = SaveSystem.Instance.ImportMapFromJSON(fileName);
             if (data == null)
             {
@@ -596,12 +617,12 @@ public class MapGenerator : MonoBehaviour
                 return;
             }
         }
-        
+
         // Alapadatok beállítása
         currentSeed = data.seed;
         mapWidth = data.width;
         mapHeight = data.height;
-        
+
         // Szobák visszaállítása
         rooms = new List<Room>();
         if (data.rooms != null)
@@ -619,14 +640,14 @@ public class MapGenerator : MonoBehaviour
                 rooms.Add(room);
             }
         }
-        
+
         // Map array újraépítése
         map = new bool[mapWidth, mapHeight];
         foreach (Room room in rooms)
         {
             FillRoom(room);
         }
-        
+
         // Folyosók visszaépítése
         savedCorridors = data.corridors != null ? new List<CorridorData>(data.corridors) : new List<CorridorData>();
         if (data.corridors != null)
@@ -645,13 +666,12 @@ public class MapGenerator : MonoBehaviour
                 }
             }
         }
-        
+
         // Csempék lehelyezése
         PlaceTiles();
-        
-        // Spawner
+
         PlaceObjectsFromData(data);
-        
+
         if (directData == null)
         {
             Debug.Log($"[MapGenerator] Pálya importálva: {fileName}");
@@ -661,10 +681,9 @@ public class MapGenerator : MonoBehaviour
             Debug.Log("[MapGenerator] Pálya importálva közvetlen adatból");
         }
     }
-    
+
     private void PlaceObjectsFromData(MapExportData data)
     {
-        // Tiszta lap
         if (enemySpawner != null)
         {
             enemySpawner.ClearAllEnemies();
@@ -677,9 +696,9 @@ public class MapGenerator : MonoBehaviour
         {
             itemSpawner.ClearAllItems();
         }
-        
+
         int totalHostages = 0;
-        
+
         // Ellenségek spawnolása
         if (data.enemies != null && enemySpawner != null)
         {
@@ -689,7 +708,7 @@ public class MapGenerator : MonoBehaviour
                 enemySpawner.SpawnEnemy(enemyType, enemyData.position);
             }
         }
-        
+
         // Túszok spawnolása
         if (data.hostages != null && hostageSpawner != null)
         {
@@ -699,7 +718,7 @@ public class MapGenerator : MonoBehaviour
                 totalHostages++;
             }
         }
-        
+
         // Tárgyak spawnolása
         if (data.items != null && itemSpawner != null)
         {
@@ -709,7 +728,7 @@ public class MapGenerator : MonoBehaviour
                 itemSpawner.SpawnItem(itemType, itemData.position);
             }
         }
-        
+
         // HostageManager inicializálása
         if (HostageManager.Instance != null)
         {
@@ -717,4 +736,3 @@ public class MapGenerator : MonoBehaviour
         }
     }
 }
-

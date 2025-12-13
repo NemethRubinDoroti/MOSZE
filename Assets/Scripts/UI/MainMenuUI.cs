@@ -18,7 +18,6 @@ public class MainMenuUI : MonoBehaviour
 
     [Header("Highscore UI")]
     public Transform highscoreContent;
-    public GameObject highscoreEntryPrefab;
     public Button highscoreBackButton;
 
     [Header("Settings UI")]
@@ -26,7 +25,7 @@ public class MainMenuUI : MonoBehaviour
     public Slider musicVolumeSlider;
     public Slider sfxVolumeSlider;
     public Button settingsBackButton;
-    
+
     [Header("New Game UI")]
     public Button randomGameButton;
     public Button seedGameButton;
@@ -86,25 +85,25 @@ public class MainMenuUI : MonoBehaviour
             settingsBackButton.onClick.AddListener(HideSubPanels);
             settingsBackButton.onClick.AddListener(() => PlayButtonSound());
         }
-            
+
         if (randomGameButton != null)
         {
             randomGameButton.onClick.AddListener(OnRandomGameClicked);
             randomGameButton.onClick.AddListener(() => PlayButtonSound());
         }
-            
+
         if (seedGameButton != null)
         {
             seedGameButton.onClick.AddListener(OnSeedGameClicked);
             seedGameButton.onClick.AddListener(() => PlayButtonSound());
         }
-            
+
         if (jsonGameButton != null)
         {
             jsonGameButton.onClick.AddListener(OnJsonGameClicked);
             jsonGameButton.onClick.AddListener(() => PlayButtonSound());
         }
-            
+
         if (newGameBackButton != null)
         {
             newGameBackButton.onClick.AddListener(HideSubPanels);
@@ -122,24 +121,21 @@ public class MainMenuUI : MonoBehaviour
 
     public void OnShow()
     {
-        // Főmenü megjelenítésekor elrejtjük az almenüket
         HideSubPanels();
     }
 
     private void OnNewGameClicked()
     {
         Debug.Log("[MainMenuUI] Új játék kattintva");
-        // Megjelenítjük az új játék opciók paneljét
         if (newGamePanel != null)
         {
             newGamePanel.SetActive(true);
             LoadAvailableMaps();
         }
-        
-        // Elrejtjük a főmenü gombokat
+
         HideMainMenuButtons();
     }
-    
+
     private void OnRandomGameClicked()
     {
         Debug.Log("[MainMenuUI] Véletlenszerű játék kattintva");
@@ -152,7 +148,7 @@ public class MainMenuUI : MonoBehaviour
             }
         }
     }
-    
+
     private void OnSeedGameClicked()
     {
         Debug.Log("[MainMenuUI] Seedelt játék kattintva");
@@ -161,7 +157,7 @@ public class MainMenuUI : MonoBehaviour
             Debug.LogWarning("[MainMenuUI] Nincs megadva seed!");
             return;
         }
-        
+
         if (int.TryParse(seedInputField.text, out int seed))
         {
             if (GameManager2D.Instance != null)
@@ -178,7 +174,7 @@ public class MainMenuUI : MonoBehaviour
             Debug.LogWarning("[MainMenuUI] Érvénytelen seed érték!");
         }
     }
-    
+
     private void OnJsonGameClicked()
     {
         Debug.Log("[MainMenuUI] JSON játék kattintva");
@@ -187,14 +183,14 @@ public class MainMenuUI : MonoBehaviour
             Debug.LogWarning("[MainMenuUI] Map dropdown nincs beállítva!");
             return;
         }
-        
+
         string selectedMap = mapDropdown.options[mapDropdown.value].text;
         if (string.IsNullOrEmpty(selectedMap))
         {
             Debug.LogWarning("[MainMenuUI] Nincs kiválasztva pálya!");
             return;
         }
-        
+
         if (GameManager2D.Instance != null)
         {
             GameManager2D.Instance.StartGameWithMap(selectedMap);
@@ -204,13 +200,13 @@ public class MainMenuUI : MonoBehaviour
             }
         }
     }
-    
+
     private void LoadAvailableMaps()
     {
         if (mapDropdown == null) return;
-        
+
         mapDropdown.ClearOptions();
-        
+
         if (SaveSystem.Instance != null)
         {
             string[] maps = SaveSystem.Instance.GetMapList();
@@ -262,7 +258,7 @@ public class MainMenuUI : MonoBehaviour
             settingsPanel.SetActive(true);
             LoadSettings();
         }
-        
+
         // Elrejtjük a főmenü gombokat
         HideMainMenuButtons();
     }
@@ -283,11 +279,11 @@ public class MainMenuUI : MonoBehaviour
     private void OnQuitClicked()
     {
         Debug.Log("[MainMenuUI] Kilépés kattintva");
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
-        #else
-            Application.Quit();
-        #endif
+#else
+        Application.Quit();
+#endif
     }
 
     private void HideSubPanels()
@@ -295,42 +291,60 @@ public class MainMenuUI : MonoBehaviour
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (highscorePanel != null) highscorePanel.SetActive(false);
         if (newGamePanel != null) newGamePanel.SetActive(false);
-        
+
         // Visszaállítjuk a főmenü gombokat
         ShowMainMenuButtons();
     }
-    
+
     private void HideMainMenuButtons()
     {
-        if (newGameButton != null && newGameButton.gameObject != null) 
+        if (newGameButton != null && newGameButton.gameObject != null)
             newGameButton.gameObject.SetActive(false);
-        if (loadGameButton != null && loadGameButton.gameObject != null) 
+        if (loadGameButton != null && loadGameButton.gameObject != null)
             loadGameButton.gameObject.SetActive(false);
-        if (settingsButton != null && settingsButton.gameObject != null) 
+        if (settingsButton != null && settingsButton.gameObject != null)
             settingsButton.gameObject.SetActive(false);
-        if (highscoreButton != null && highscoreButton.gameObject != null) 
+        if (highscoreButton != null && highscoreButton.gameObject != null)
             highscoreButton.gameObject.SetActive(false);
-        if (quitButton != null && quitButton.gameObject != null) 
+        if (quitButton != null && quitButton.gameObject != null)
             quitButton.gameObject.SetActive(false);
     }
-    
+
     private void ShowMainMenuButtons()
     {
-        if (newGameButton != null && newGameButton.gameObject != null) 
+        if (newGameButton != null && newGameButton.gameObject != null)
             newGameButton.gameObject.SetActive(true);
-        if (loadGameButton != null && loadGameButton.gameObject != null) 
+        if (loadGameButton != null && loadGameButton.gameObject != null)
             loadGameButton.gameObject.SetActive(true);
-        if (settingsButton != null && settingsButton.gameObject != null) 
+        if (settingsButton != null && settingsButton.gameObject != null)
             settingsButton.gameObject.SetActive(true);
-        if (highscoreButton != null && highscoreButton.gameObject != null) 
+        if (highscoreButton != null && highscoreButton.gameObject != null)
             highscoreButton.gameObject.SetActive(true);
-        if (quitButton != null && quitButton.gameObject != null) 
+        if (quitButton != null && quitButton.gameObject != null)
             quitButton.gameObject.SetActive(true);
     }
 
     private void DisplayHighscores()
     {
-        if (highscoreContent == null) return;
+        Debug.Log("[MainMenuUI] DisplayHighscores() meghívva");
+
+        if (highscoreContent == null)
+        {
+            Debug.LogWarning("[MainMenuUI] highscoreContent == NULL! Nem lehet megjeleníteni a highscore-okat.");
+            return;
+        }
+
+        UnityEngine.UI.VerticalLayoutGroup layoutGroup = highscoreContent.GetComponent<UnityEngine.UI.VerticalLayoutGroup>();
+        if (layoutGroup == null)
+        {
+            layoutGroup = highscoreContent.gameObject.AddComponent<UnityEngine.UI.VerticalLayoutGroup>();
+            layoutGroup.spacing = 5f;
+            layoutGroup.childAlignment = TextAnchor.UpperLeft;
+            layoutGroup.childControlWidth = true;
+            layoutGroup.childControlHeight = false;
+            layoutGroup.childForceExpandWidth = true;
+            layoutGroup.childForceExpandHeight = false;
+        }
 
         // Töröljük a meglévő bejegyzéseket
         foreach (Transform child in highscoreContent)
@@ -342,37 +356,49 @@ public class MainMenuUI : MonoBehaviour
         if (GameManager2D.Instance != null && GameManager2D.Instance.scoreSystem != null)
         {
             var highscores = GameManager2D.Instance.scoreSystem.GetHighScores();
-            
+            Debug.Log($"[MainMenuUI] Betöltött highscore-ok száma: {highscores.Count}");
+
             if (highscores.Count == 0)
             {
                 // Ha nincs highscore, jelenítsünk meg egy üzenetet
-                if (highscoreEntryPrefab != null)
-                {
-                    GameObject entry = Instantiate(highscoreEntryPrefab, highscoreContent);
-                    var text = entry.GetComponentInChildren<Text>();
-                    if (text != null)
-                    {
-                        text.text = "No high scores yet!";
-                    }
-                }
+                CreateHighscoreEntry("Nincs mentett highscore!");
             }
             else
             {
                 // Megjelenítjük a highscore-okat
                 for (int i = 0; i < highscores.Count; i++)
                 {
-                    if (highscoreEntryPrefab != null)
-                    {
-                        GameObject entry = Instantiate(highscoreEntryPrefab, highscoreContent);
-                        var text = entry.GetComponentInChildren<Text>();
-                        if (text != null)
-                        {
-                            var score = highscores[i];
-                            text.text = $"{i + 1}. {score.playerName} - {score.score} ({score.date})";
-                        }
-                    }
+                    var score = highscores[i];
+                    string entryText = $"{i + 1}. {score.playerName} - {score.score} ({score.date})";
+                    CreateHighscoreEntry(entryText);
                 }
             }
+        }
+    }
+
+    private void CreateHighscoreEntry(string text)
+    {
+        // Dinamikusan létrehozunk egy egyszerű Text objektumot
+        GameObject entry = new GameObject("HighscoreEntry");
+        entry.transform.SetParent(highscoreContent, false);
+
+        Text textComponent = entry.AddComponent<Text>();
+        textComponent.text = text;
+        textComponent.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        textComponent.fontSize = 20;
+        textComponent.color = Color.white;
+        textComponent.alignment = TextAnchor.MiddleLeft;
+
+        RectTransform rectTransform = entry.GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+            // Beállítjuk az anchor-t és a pozíciót, hogy a VerticalLayoutGroup megfelelően működjön
+            rectTransform.anchorMin = new Vector2(0, 1);
+            rectTransform.anchorMax = new Vector2(1, 1);
+            rectTransform.pivot = new Vector2(0.5f, 1);
+            rectTransform.anchoredPosition = Vector2.zero;
+
+            rectTransform.sizeDelta = new Vector2(0, 30);
         }
     }
 
@@ -476,3 +502,4 @@ public class MainMenuUI : MonoBehaviour
         }
     }
 }
+

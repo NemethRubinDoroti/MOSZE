@@ -107,7 +107,7 @@ public class PauseMenuUI : MonoBehaviour
 
     private void OnSaveClicked()
     {
-        Debug.Log("[PauseMenuUI] Save clicked");
+        Debug.Log("[PauseMenuUI] Mentés gomb kattintva");
         if (GameManager2D.Instance != null)
         {
             GameManager2D.Instance.SaveGame();
@@ -117,7 +117,7 @@ public class PauseMenuUI : MonoBehaviour
 
     private void OnLoadClicked()
     {
-        Debug.Log("[PauseMenuUI] Load clicked");
+        Debug.Log("[PauseMenuUI] Betöltés gomb kattintva");
         if (GameManager2D.Instance != null)
         {
             GameManager2D.Instance.LoadGame();
@@ -131,7 +131,7 @@ public class PauseMenuUI : MonoBehaviour
 
     private void OnExportMapClicked()
     {
-        Debug.Log("[PauseMenuUI] Export Map clicked");
+        Debug.Log("[PauseMenuUI] Pálya exportálása gomb kattintva");
         
         if (GameManager2D.Instance == null)
         {
@@ -159,7 +159,7 @@ public class PauseMenuUI : MonoBehaviour
 
     private void OnSettingsClicked()
     {
-        Debug.Log("[PauseMenuUI] Settings clicked");
+        Debug.Log("[PauseMenuUI] Beállítások gomb kattintva");
         if (settingsPanel != null)
         {
             settingsPanel.SetActive(true);
