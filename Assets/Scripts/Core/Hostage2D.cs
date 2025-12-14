@@ -72,6 +72,12 @@ public class Hostage2D : MonoBehaviour
             HostageManager.Instance.CollectHostage(this);
         }
         
+        // Gyűjtés hang lejátszása
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayCollect();
+        }
+        
         // Töröljük a hostage GameObject-et
         Destroy(gameObject);
     }

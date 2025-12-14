@@ -26,6 +26,16 @@ public class MainMenuUI : MonoBehaviour
     public Slider musicVolumeSlider;
     public Slider sfxVolumeSlider;
     public Button settingsBackButton;
+    
+    [Header("New Game UI")]
+    public Button randomGameButton;
+    public Button seedGameButton;
+    public Button jsonGameButton;
+    public InputField seedInputField;
+    public Dropdown mapDropdown;
+    public Button newGameBackButton;
+    public Text seedLabel;
+    public Text mapLabel;
 
     private void Start()
     {
@@ -36,37 +46,78 @@ public class MainMenuUI : MonoBehaviour
     private void SetupButtons()
     {
         if (newGameButton != null)
+        {
             newGameButton.onClick.AddListener(OnNewGameClicked);
+            newGameButton.onClick.AddListener(() => PlayButtonSound());
+        }
 
         if (loadGameButton != null)
+        {
             loadGameButton.onClick.AddListener(OnLoadGameClicked);
+            loadGameButton.onClick.AddListener(() => PlayButtonSound());
+        }
 
         if (settingsButton != null)
+        {
             settingsButton.onClick.AddListener(OnSettingsClicked);
+            settingsButton.onClick.AddListener(() => PlayButtonSound());
+        }
 
         if (highscoreButton != null)
+        {
             highscoreButton.onClick.AddListener(OnHighscoreClicked);
+            highscoreButton.onClick.AddListener(() => PlayButtonSound());
+        }
 
         if (quitButton != null)
+        {
             quitButton.onClick.AddListener(OnQuitClicked);
+            quitButton.onClick.AddListener(() => PlayButtonSound());
+        }
 
         if (highscoreBackButton != null)
+        {
             highscoreBackButton.onClick.AddListener(HideSubPanels);
+            highscoreBackButton.onClick.AddListener(() => PlayButtonSound());
+        }
 
         if (settingsBackButton != null)
+        {
             settingsBackButton.onClick.AddListener(HideSubPanels);
+            settingsBackButton.onClick.AddListener(() => PlayButtonSound());
+        }
             
         if (randomGameButton != null)
+        {
             randomGameButton.onClick.AddListener(OnRandomGameClicked);
+            randomGameButton.onClick.AddListener(() => PlayButtonSound());
+        }
             
         if (seedGameButton != null)
+        {
             seedGameButton.onClick.AddListener(OnSeedGameClicked);
+            seedGameButton.onClick.AddListener(() => PlayButtonSound());
+        }
             
         if (jsonGameButton != null)
+        {
             jsonGameButton.onClick.AddListener(OnJsonGameClicked);
+            jsonGameButton.onClick.AddListener(() => PlayButtonSound());
+        }
             
         if (newGameBackButton != null)
+        {
             newGameBackButton.onClick.AddListener(HideSubPanels);
+            newGameBackButton.onClick.AddListener(() => PlayButtonSound());
+        }
+    }
+
+    private void PlayButtonSound()
+    {
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayButtonClick();
+        }
     }
 
     public void OnShow()
@@ -211,7 +262,7 @@ public class MainMenuUI : MonoBehaviour
             settingsPanel.SetActive(true);
             LoadSettings();
         }
-
+        
         // Elrejtjük a főmenü gombokat
         HideMainMenuButtons();
     }
@@ -232,11 +283,11 @@ public class MainMenuUI : MonoBehaviour
     private void OnQuitClicked()
     {
         Debug.Log("[MainMenuUI] Kilépés kattintva");
-#if UNITY_EDITOR
+        #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
+        #else
+            Application.Quit();
+        #endif
     }
 
     private void HideSubPanels()
@@ -244,36 +295,36 @@ public class MainMenuUI : MonoBehaviour
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (highscorePanel != null) highscorePanel.SetActive(false);
         if (newGamePanel != null) newGamePanel.SetActive(false);
-
+        
         // Visszaállítjuk a főmenü gombokat
         ShowMainMenuButtons();
     }
-
+    
     private void HideMainMenuButtons()
     {
-        if (newGameButton != null && newGameButton.gameObject != null)
+        if (newGameButton != null && newGameButton.gameObject != null) 
             newGameButton.gameObject.SetActive(false);
-        if (loadGameButton != null && loadGameButton.gameObject != null)
+        if (loadGameButton != null && loadGameButton.gameObject != null) 
             loadGameButton.gameObject.SetActive(false);
-        if (settingsButton != null && settingsButton.gameObject != null)
+        if (settingsButton != null && settingsButton.gameObject != null) 
             settingsButton.gameObject.SetActive(false);
-        if (highscoreButton != null && highscoreButton.gameObject != null)
+        if (highscoreButton != null && highscoreButton.gameObject != null) 
             highscoreButton.gameObject.SetActive(false);
-        if (quitButton != null && quitButton.gameObject != null)
+        if (quitButton != null && quitButton.gameObject != null) 
             quitButton.gameObject.SetActive(false);
     }
-
+    
     private void ShowMainMenuButtons()
     {
-        if (newGameButton != null && newGameButton.gameObject != null)
+        if (newGameButton != null && newGameButton.gameObject != null) 
             newGameButton.gameObject.SetActive(true);
-        if (loadGameButton != null && loadGameButton.gameObject != null)
+        if (loadGameButton != null && loadGameButton.gameObject != null) 
             loadGameButton.gameObject.SetActive(true);
-        if (settingsButton != null && settingsButton.gameObject != null)
+        if (settingsButton != null && settingsButton.gameObject != null) 
             settingsButton.gameObject.SetActive(true);
-        if (highscoreButton != null && highscoreButton.gameObject != null)
+        if (highscoreButton != null && highscoreButton.gameObject != null) 
             highscoreButton.gameObject.SetActive(true);
-        if (quitButton != null && quitButton.gameObject != null)
+        if (quitButton != null && quitButton.gameObject != null) 
             quitButton.gameObject.SetActive(true);
     }
 
@@ -291,7 +342,7 @@ public class MainMenuUI : MonoBehaviour
         if (GameManager2D.Instance != null && GameManager2D.Instance.scoreSystem != null)
         {
             var highscores = GameManager2D.Instance.scoreSystem.GetHighScores();
-
+            
             if (highscores.Count == 0)
             {
                 // Ha nincs highscore, jelenítsünk meg egy üzenetet
@@ -327,36 +378,101 @@ public class MainMenuUI : MonoBehaviour
 
     private void LoadSettings()
     {
-        // TODO: Betöltjük a beállításokat (pl. PlayerPrefs-ből)
-        if (masterVolumeSlider != null)
+        // Betöltjük a beállításokat AudioManager-ből
+        if (AudioManager.Instance != null)
         {
-            masterVolumeSlider.value = PlayerPrefs.GetFloat("MasterVolume", 1f);
+            if (masterVolumeSlider != null)
+            {
+                masterVolumeSlider.value = AudioManager.Instance.masterVolume;
+                masterVolumeSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
+            }
+            if (musicVolumeSlider != null)
+            {
+                musicVolumeSlider.value = AudioManager.Instance.musicVolume;
+                musicVolumeSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
+            }
+            if (sfxVolumeSlider != null)
+            {
+                sfxVolumeSlider.value = AudioManager.Instance.sfxVolume;
+                sfxVolumeSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
+            }
         }
-        if (musicVolumeSlider != null)
+        else
         {
-            musicVolumeSlider.value = PlayerPrefs.GetFloat("MusicVolume", 1f);
+            // Fallback PlayerPrefs-re ha nincs AudioManager
+            if (masterVolumeSlider != null)
+            {
+                masterVolumeSlider.value = PlayerPrefs.GetFloat("MasterVolume", 1f);
+            }
+            if (musicVolumeSlider != null)
+            {
+                musicVolumeSlider.value = PlayerPrefs.GetFloat("MusicVolume", 1f);
+            }
+            if (sfxVolumeSlider != null)
+            {
+                sfxVolumeSlider.value = PlayerPrefs.GetFloat("SFXVolume", 1f);
+            }
         }
-        if (sfxVolumeSlider != null)
+    }
+
+    private void OnMasterVolumeChanged(float value)
+    {
+        if (AudioManager.Instance != null)
         {
-            sfxVolumeSlider.value = PlayerPrefs.GetFloat("SFXVolume", 1f);
+            AudioManager.Instance.SetMasterVolume(value);
+        }
+    }
+
+    private void OnMusicVolumeChanged(float value)
+    {
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.SetMusicVolume(value);
+        }
+    }
+
+    private void OnSFXVolumeChanged(float value)
+    {
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.SetSFXVolume(value);
         }
     }
 
     public void SaveSettings()
     {
-        // TODO: Mentjük a beállításokat
-        if (masterVolumeSlider != null)
+        // Beállítások mentése AudioManager-en keresztül (automatikusan menti)
+        if (AudioManager.Instance != null)
         {
-            PlayerPrefs.SetFloat("MasterVolume", masterVolumeSlider.value);
+            if (masterVolumeSlider != null)
+            {
+                AudioManager.Instance.SetMasterVolume(masterVolumeSlider.value);
+            }
+            if (musicVolumeSlider != null)
+            {
+                AudioManager.Instance.SetMusicVolume(musicVolumeSlider.value);
+            }
+            if (sfxVolumeSlider != null)
+            {
+                AudioManager.Instance.SetSFXVolume(sfxVolumeSlider.value);
+            }
         }
-        if (musicVolumeSlider != null)
+        else
         {
-            PlayerPrefs.SetFloat("MusicVolume", musicVolumeSlider.value);
+            // Fallback PlayerPrefs-re
+            if (masterVolumeSlider != null)
+            {
+                PlayerPrefs.SetFloat("MasterVolume", masterVolumeSlider.value);
+            }
+            if (musicVolumeSlider != null)
+            {
+                PlayerPrefs.SetFloat("MusicVolume", musicVolumeSlider.value);
+            }
+            if (sfxVolumeSlider != null)
+            {
+                PlayerPrefs.SetFloat("SFXVolume", sfxVolumeSlider.value);
+            }
+            PlayerPrefs.Save();
         }
-        if (sfxVolumeSlider != null)
-        {
-            PlayerPrefs.SetFloat("SFXVolume", sfxVolumeSlider.value);
-        }
-        PlayerPrefs.Save();
     }
 }

@@ -17,6 +17,12 @@ public class Stats : MonoBehaviour
         int actualDamage = Mathf.Max(1, damage - defense);
         currentHealth -= actualDamage;
         currentHealth = Mathf.Max(0, currentHealth);
+        
+        // Sebzés hang lejátszása
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayHit();
+        }
     }
 
     // Gyógyulás eljárás

@@ -76,6 +76,12 @@ public class Item2D : MonoBehaviour
             ItemManager.Instance.CollectItem(this);
         }
         
+        // Gyűjtés hang lejátszása
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayCollect();
+        }
+        
         Destroy(gameObject);
     }
 }

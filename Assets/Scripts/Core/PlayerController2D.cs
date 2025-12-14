@@ -185,6 +185,12 @@ public class PlayerController2D : MonoBehaviour
                 {
                     player2D.position = Vector2Int.RoundToInt(newPosition);
                 }
+                
+                // Lépés hang lejátszása
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayFootstep();
+                }
             }
         }
     }

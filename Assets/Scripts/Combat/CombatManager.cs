@@ -73,6 +73,12 @@ public class CombatManager : MonoBehaviour
         {
             Debug.LogError("[CombatManager] CombatUI NULL!");
         }
+        
+        // Harc kezdés hang
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayCombatStart();
+        }
     }
 
     public void EndCombat()
@@ -100,6 +106,12 @@ public class CombatManager : MonoBehaviour
         if (combatUI != null)
         {
             combatUI.HideCombatUI();
+        }
+        
+        // Harc vége hang
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayCombatEnd();
         }
 
         if (playerWon)
@@ -268,6 +280,15 @@ public class CombatManager : MonoBehaviour
         }
 
         action.Execute();
+        
+        // Támadás hang lejátszása
+        if (action.type == Action.ActionType.Attack)
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayAttack();
+            }
+        }
 
         // Azonnal töröljük a halott ellenségeket
         if (action.type == Action.ActionType.Attack && action.target != null && !action.target.isPlayer)

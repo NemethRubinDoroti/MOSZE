@@ -54,6 +54,12 @@ public class ExperienceSystem : MonoBehaviour
         
         OnLevelUp?.Invoke(currentLevel);
         
+        // Szintlépés hang lejátszása
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayLevelUp();
+        }
+        
         // Stat növelés a PlayerStatsConfig alapján
         ApplyLevelUpStats();
     }
