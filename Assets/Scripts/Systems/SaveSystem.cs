@@ -109,20 +109,35 @@ public class SaveSystem : MonoBehaviour
     
     private void Awake()
     {
+        Debug.Log("[SaveSystem] Awake() meghívva");
+        
         if (Instance == null)
         {
             Instance = this;
+            Debug.Log("[SaveSystem] Instance beállítva");
         }
         else
         {
+            Debug.LogWarning("[SaveSystem] Instance már létezik, GameObject törlése");
             Destroy(gameObject);
             return;
         }
         
-        savePath = Path.Combine(Application.persistentDataPath, SAVE_FOLDER);
+        string persistentPath = Application.persistentDataPath;
+        Debug.Log($"[SaveSystem] Application.persistentDataPath: {persistentPath}");
+        
+        savePath = Path.Combine(persistentPath, SAVE_FOLDER);
+        Debug.Log($"[SaveSystem] Save mappa útvonal: {savePath}");
+        
         if (!Directory.Exists(savePath))
         {
+            Debug.Log("[SaveSystem] Save mappa nem létezik, létrehozás...");
             Directory.CreateDirectory(savePath);
+            Debug.Log($"[SaveSystem] Save mappa létrehozva: {Directory.Exists(savePath)}");
+        }
+        else
+        {
+            Debug.Log("[SaveSystem] Save mappa már létezik");
         }
     }
     
@@ -211,6 +226,8 @@ public class SaveSystem : MonoBehaviour
     // Pálya exportálása JSON fájlba
     public void ExportMapToJSON(MapExportData mapData, string fileName = "map_export")
     {
+        Debug.Log($"[SaveSystem] ExportMapToJSON hívva: fileName={fileName}");
+        
         if (mapData == null)
         {
             Debug.LogError("[SaveSystem] ExportMapToJSON: mapData == NULL! Nem lehet exportálni.");
@@ -220,21 +237,36 @@ public class SaveSystem : MonoBehaviour
         try
         {
             string persistentPath = Application.persistentDataPath;
+            Debug.Log($"[SaveSystem] Application.persistentDataPath: {persistentPath}");
+            
             string mapPath = Path.Combine(persistentPath, "Maps");
+            Debug.Log($"[SaveSystem] Map mappa útvonal: {mapPath}");
             
             if (!Directory.Exists(mapPath))
             {
+                Debug.Log($"[SaveSystem] Maps mappa nem létezik, létrehozás...");
                 Directory.CreateDirectory(mapPath);
+                Debug.Log($"[SaveSystem] Maps mappa létrehozva: {Directory.Exists(mapPath)}");
+            }
+            else
+            {
+                Debug.Log($"[SaveSystem] Maps mappa már létezik");
             }
             
             string json = JsonUtility.ToJson(mapData, true);
+            Debug.Log($"[SaveSystem] JSON generálva, hossz: {json.Length} karakter");
+            
             string filePath = Path.Combine(mapPath, $"{fileName}.json");
+            Debug.Log($"[SaveSystem] Fájl útvonal: {filePath}");
             
             File.WriteAllText(filePath, json);
+            Debug.Log($"[SaveSystem] Fájl írva: {filePath}");
             
+            // Ellenőrizzük, hogy a fájl tényleg létrejött-e
             if (File.Exists(filePath))
             {
                 Debug.Log($"[SaveSystem] Pálya sikeresen exportálva: {filePath}");
+                FileInfo fileInfo = new FileInfo(filePath);
             }
             else
             {
@@ -244,6 +276,7 @@ public class SaveSystem : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogError($"[SaveSystem] HIBA a pálya exportálásakor: {e.Message}");
+            Debug.LogError($"[SaveSystem] Stack trace: {e.StackTrace}");
         }
     }
     
@@ -299,4 +332,3 @@ public class SaveSystem : MonoBehaviour
         }
     }
 }
-

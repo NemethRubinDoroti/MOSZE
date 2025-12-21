@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 
 public class CombatManager : MonoBehaviour
 {
@@ -20,15 +18,17 @@ public class CombatManager : MonoBehaviour
 
     private Combatant playerCombatant;
     private List<Combatant> enemyCombatants;
-    private Dictionary<Combatant, Enemy2D> enemy2DMap;
-
-    // Harc kezdete
+    private System.Collections.Generic.Dictionary<Combatant, Enemy2D> enemy2DMap;
+    private Coroutine enemyTurnsCoroutine; // Referencia a coroutine-hoz, hogy meg tudjuk állítani
+    private bool bossDefeatedThisCombat = false; // Flag, hogy boss legyőzve lett-e ebben a harcban
+    
     public void StartCombat(Combatant player, List<Combatant> enemies, List<Enemy2D> enemy2DList = null)
     {
         combatants = new List<Combatant>();
         enemyCombatants = new List<Combatant>();
-        enemy2DMap = new Dictionary<Combatant, Enemy2D>();
-
+        enemy2DMap = new System.Collections.Generic.Dictionary<Combatant, Enemy2D>();
+        bossDefeatedThisCombat = false; // Reset flag új harc kezdetén
+        
         playerCombatant = player;
         combatants.Add(player);
 
@@ -83,13 +83,18 @@ public class CombatManager : MonoBehaviour
 
     public void EndCombat()
     {
+        Debug.Log("[CombatManager] EndCombat() meghívva");
         currentState = CombatState.CombatEnd;
-
-        // Ellenőrizzük hogy a játékos nyert vagy meghalt
+        
+        // Megállítjuk az összes futó coroutine-t (pl. ProcessEnemyTurnsCoroutine)
+        StopAllCoroutines();
+        enemyTurnsCoroutine = null; // Töröljük a referenciát
+        
         bool playerWon = CheckWinCondition();
         bool playerAlive = playerCombatant != null && playerCombatant.isAlive;
-
-
+        
+        Debug.Log($"[CombatManager] EndCombat állapot: playerWon={playerWon}, playerAlive={playerAlive}");
+        
         if (combatUI == null)
         {
             if (UIManager.Instance != null)
@@ -108,6 +113,12 @@ public class CombatManager : MonoBehaviour
             combatUI.HideCombatUI();
         }
         
+        // UIManager-en keresztül is elrejtjük
+        if (UIManager.Instance != null && UIManager.Instance.combatUI != null)
+        {
+            UIManager.Instance.HideCombatUI();
+        }
+        
         // Harc vége hang
         if (AudioManager.Instance != null)
         {
@@ -116,15 +127,31 @@ public class CombatManager : MonoBehaviour
 
         if (playerWon)
         {
-            // Ellenőrizzük, hogy a boss volt-e a harcban
-            bool bossDefeated = IsBossInCombat() && !IsBossAlive();
+            // Ellenőrizzük, hogy boss legyőzve lett-e (flag alapján, mert a boss már törölve lehet)
+            // Vagy még mindig a harcban van és él-e
+            bool bossDefeated = bossDefeatedThisCombat;
+            
+            // Ha a flag nincs beállítva, még ellenőrizzük, hogy van-e boss a harcban
+            if (!bossDefeated)
+            {
+                bool bossInCombat = IsBossInCombat();
+                bool bossAlive = IsBossAlive();
+                bossDefeated = bossInCombat && !bossAlive;
+            }
+            
+            Debug.Log($"[CombatManager] Boss ellenőrzés: bossDefeatedThisCombat={bossDefeatedThisCombat}, bossDefeated={bossDefeated}");
             
             if (bossDefeated)
             {
+                Debug.Log("[CombatManager] Boss legyőzve! Győzelem!");
                 // Boss legyőzve = Győzelem!
                 if (GameManager2D.Instance != null)
                 {
                     GameManager2D.Instance.WinGame();
+                }
+                else
+                {
+                    Debug.LogError("[CombatManager] GameManager2D.Instance == NULL! Nem lehet győzelmet kijelenteni!");
                 }
             }
             else
@@ -144,9 +171,10 @@ public class CombatManager : MonoBehaviour
         }
         else if (!playerAlive)
         {
-            // Vége a dalnak
+            Debug.Log("[CombatManager] Játékos halott a harcban! Játék vége...");
             if (GameManager2D.Instance != null)
             {
+                Debug.Log("[CombatManager] GameManager2D.Instance megtalálva, EndGame() hívása...");
                 GameManager2D.Instance.EndGame();
             }
             else
@@ -199,15 +227,33 @@ public class CombatManager : MonoBehaviour
             return;
         }
 
+        
+        // ELLENŐRIZZÜK, hogy boss volt-e, MIELŐTT törölnénk!
         if (enemy2DMap != null && enemy2DMap.ContainsKey(enemy))
         {
             Enemy2D enemy2D = enemy2DMap[enemy];
-            if (enemy2D != null && enemy2D.gameObject != null)
+            if (enemy2D != null)
             {
-                Destroy(enemy2D.gameObject);
+                // Ha boss volt, eltároljuk ezt az információt
+                if (enemy2D.type == Enemy2D.EnemyType.Boss)
+                {
+                    bossDefeatedThisCombat = true; // Eltároljuk, hogy boss legyőzve lett
+                    Debug.Log("[CombatManager] Boss legyőzve! Flag beállítva.");
+                }
+                
+                if (enemy2D.gameObject != null)
+                {
+                    // XP adás ellenség legyőzésekor
+                    GiveXPForEnemy(enemy2D);
+                    
+                    Destroy(enemy2D.gameObject);
+                }
                 enemy2DMap.Remove(enemy);
             }
         }
+        
+        combatants.Remove(enemy);
+        enemyCombatants.Remove(enemy);
     }
     
     private void GiveXPForEnemy(Enemy2D enemy)
@@ -296,12 +342,6 @@ public class CombatManager : MonoBehaviour
             // Ha egy ellenséget támadtunk és meghalt, azonnal töröljük
             if (!action.target.isAlive)
             {
-                // XP adás ellenség legyőzésekor
-                if (enemy2DMap != null && enemy2DMap.ContainsKey(action.target))
-                {
-                    GiveXPForEnemy(enemy2DMap[action.target]);
-                }
-                
                 RemoveDeadEnemy(action.target);
             }
         }
@@ -316,6 +356,27 @@ public class CombatManager : MonoBehaviour
         // Ellenőrizzük, hogy a harc véget ért-e
         if (CheckWinCondition() || !playerCombatant.isAlive)
         {
+            // Ha a játékos meghalt, azonnal elrejtjük a CombatUI-t ÉS megállítjuk a coroutine-t
+            if (!playerCombatant.isAlive)
+            {
+                // Azonnal megállítjuk az ellenség kör coroutine-ját
+                if (enemyTurnsCoroutine != null)
+                {
+                    StopCoroutine(enemyTurnsCoroutine);
+                    enemyTurnsCoroutine = null;
+                }
+                
+                // Azonnal elrejtjük a CombatUI-t, még mielőtt az EndCombat() meghívódik
+                if (combatUI != null)
+                {
+                    combatUI.HideCombatUI();
+                }
+                if (UIManager.Instance != null && UIManager.Instance.combatUI != null)
+                {
+                    UIManager.Instance.HideCombatUI();
+                }
+            }
+            
             EndCombat();
             return;
         }
@@ -327,8 +388,8 @@ public class CombatManager : MonoBehaviour
             StartCoroutine(DelayedEnemyTurn());
         }
     }
-
-    private IEnumerator DelayedEnemyTurn()
+    
+    private System.Collections.IEnumerator DelayedEnemyTurn()
     {
         yield return new WaitForSecondsRealtime(0.5f);
         StartEnemyTurn();
@@ -336,8 +397,7 @@ public class CombatManager : MonoBehaviour
 
     private void UpdateVisualPositions()
     {
-        // Tilemap-et kapunk a cellák világkoordinátáihoz
-        Tilemap tilemap = null;
+        UnityEngine.Tilemaps.Tilemap tilemap = null;
         if (GameManager2D.Instance != null && GameManager2D.Instance.mapGenerator != null)
         {
             tilemap = GameManager2D.Instance.mapGenerator.groundTilemap;
@@ -391,23 +451,58 @@ public class CombatManager : MonoBehaviour
 
     private void ProcessEnemyTurns()
     {
-        StartCoroutine(ProcessEnemyTurnsCoroutine());
-    }
-
-    // Ellenségek körének végrehajtása
-    private IEnumerator ProcessEnemyTurnsCoroutine()
-    {
-        foreach (Combatant enemy in enemyCombatants)
+        // Ha van már futó coroutine, megállítjuk
+        if (enemyTurnsCoroutine != null)
         {
+            StopCoroutine(enemyTurnsCoroutine);
+        }
+        enemyTurnsCoroutine = StartCoroutine(ProcessEnemyTurnsCoroutine());
+    }
+    
+    private System.Collections.IEnumerator ProcessEnemyTurnsCoroutine()
+    {
+        // Másolatot készítünk a listáról, hogy ne legyen "Collection was modified" hiba
+        List<Combatant> enemiesToProcess = new List<Combatant>(enemyCombatants);
+        
+        foreach (Combatant enemy in enemiesToProcess)
+        {
+            // Ellenőrizzük MINDEN iteráció elején, hogy a harc még aktív-e (ha véget ért, kilépünk)
+            if (currentState == CombatState.CombatEnd || currentState == CombatState.None)
+            {
+                Debug.Log("[CombatManager] Harc véget ért, megszakítjuk az ellenség körét");
+                enemyTurnsCoroutine = null;
+                yield break;
+            }
+            
+            // Ellenőrizzük, hogy a játékos még él-e (MINDEN iteráció elején)
+            if (playerCombatant == null || !playerCombatant.isAlive)
+            {
+                Debug.Log("[CombatManager] Játékos halott, megszakítjuk az ellenség körét");
+                // Elrejtjük a CombatUI-t
+                if (combatUI != null)
+                {
+                    combatUI.HideCombatUI();
+                }
+                if (UIManager.Instance != null && UIManager.Instance.combatUI != null)
+                {
+                    UIManager.Instance.HideCombatUI();
+                }
+                enemyTurnsCoroutine = null;
+                yield break;
+            }
+            
+            // Ellenőrizzük, hogy az ellenség még a listában van-e (lehet, hogy törölték)
+            if (!enemyCombatants.Contains(enemy))
+            {
+                continue;
+            }
+            
             if (!enemy.isAlive) continue;
-
-            // Ellenség viselkedését kapjuk meg az Enemy2D-ből, ha van
             string enemyName = enemy.id;
             if (enemy2DMap != null && enemy2DMap.ContainsKey(enemy) && enemy2DMap[enemy] != null)
             {
                 enemyName = enemy2DMap[enemy].gameObject.name;
             }
-
             Action enemyAction = null;
             if (enemy2DMap != null && enemy2DMap.ContainsKey(enemy))
             {
@@ -455,8 +550,32 @@ public class CombatManager : MonoBehaviour
                 int playerHealthBefore = playerCombatant != null && playerCombatant.stats != null ? playerCombatant.stats.currentHealth : 0;
 
                 ProcessAction(enemyAction);
-
-                if (enemyAction.type == Action.ActionType.Attack && combatUI != null)
+                
+                // Ellenőrizzük újra, hogy a harc még aktív-e (ProcessAction meghívhatja az EndCombat-et)
+                if (currentState == CombatState.CombatEnd || currentState == CombatState.None)
+                {
+                    Debug.Log("[CombatManager] Harc véget ért ProcessAction után, megszakítjuk az ellenség körét");
+                    yield break;
+                }
+                
+                // Ha a játékos meghalt, azonnal kilépünk és elrejtjük a UI-t
+                // Ezt a log üzenetek ELŐTT ellenőrizzük, hogy ne próbáljuk használni a combatUI-t
+                if (playerCombatant == null || !playerCombatant.isAlive)
+                {
+                    Debug.Log("[CombatManager] Játékos meghalt, azonnal elrejtjük a CombatUI-t és megszakítjuk az ellenség körét");
+                    if (combatUI != null)
+                    {
+                        combatUI.HideCombatUI();
+                    }
+                    if (UIManager.Instance != null && UIManager.Instance.combatUI != null)
+                    {
+                        UIManager.Instance.HideCombatUI();
+                    }
+                    enemyTurnsCoroutine = null;
+                    yield break;
+                }
+                
+                if (enemyAction.type == Action.ActionType.Attack && combatUI != null && playerCombatant != null && playerCombatant.isAlive)
                 {
                     int playerHealthAfter = playerCombatant != null && playerCombatant.stats != null ? playerCombatant.stats.currentHealth : 0;
                     int damage = playerHealthBefore - playerHealthAfter;
@@ -474,12 +593,6 @@ public class CombatManager : MonoBehaviour
                 // Ha az ellenség meghalt, töröljük (ez akkor történhet, ha a játékos visszatámadott)
                 if (!enemy.isAlive)
                 {
-                    // XP adás ellenség legyőzésekor
-                    if (enemy2DMap != null && enemy2DMap.ContainsKey(enemy))
-                    {
-                        GiveXPForEnemy(enemy2DMap[enemy]);
-                    }
-                    
                     RemoveDeadEnemy(enemy);
                 }
                 // Kis késleltetés az ellenség cselekvései között a láthatóság érdekében
@@ -489,12 +602,14 @@ public class CombatManager : MonoBehaviour
             // Ellenőrizzük, hogy a játékos meghalt-e
             if (!playerCombatant.isAlive)
             {
+                Debug.Log("[CombatManager] Játékos halott az ellenség kör után! EndCombat() hívása...");
                 EndCombat();
                 yield break;
             }
         }
 
         // Minden ellenség cselekvését végrehajtottuk, visszatérünk a játékos köréhez
+        enemyTurnsCoroutine = null; // Töröljük a referenciát
         StartPlayerTurn();
     }
 
@@ -514,32 +629,44 @@ public class CombatManager : MonoBehaviour
 
     private bool IsBossInCombat()
     {
-        if (enemy2DMap == null) return false;
+        if (enemy2DMap == null)
+        {
+            Debug.Log("[CombatManager] IsBossInCombat: enemy2DMap == null");
+            return false;
+        }
         
         foreach (var kvp in enemy2DMap)
         {
             if (kvp.Value != null && kvp.Value.type == Enemy2D.EnemyType.Boss)
             {
+                Debug.Log("[CombatManager] IsBossInCombat: Boss találva a harcban");
                 return true;
             }
         }
+        
+        Debug.Log("[CombatManager] IsBossInCombat: Nincs boss a harcban");
         return false;
     }
     
     private bool IsBossAlive()
     {
-        if (enemy2DMap == null) return false;
+        if (enemy2DMap == null)
+        {
+            Debug.Log("[CombatManager] IsBossAlive: enemy2DMap == null");
+            return false;
+        }
         
         foreach (var kvp in enemy2DMap)
         {
             if (kvp.Value != null && kvp.Value.type == Enemy2D.EnemyType.Boss)
             {
-                if (kvp.Value.stats != null && kvp.Value.stats.IsAlive())
-                {
-                    return true;
-                }
+                bool alive = kvp.Value.stats != null && kvp.Value.stats.IsAlive();
+                Debug.Log($"[CombatManager] IsBossAlive: Boss találva, él-e: {alive}");
+                return alive;
             }
         }
+        
+        Debug.Log("[CombatManager] IsBossAlive: Nincs boss a harcban");
         return false;
     }
 

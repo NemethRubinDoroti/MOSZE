@@ -11,10 +11,22 @@ public class InGameHUD : MonoBehaviour
     [Header("Score UI")]
     public Text scoreText;
 
+    [Header("Hostage UI")]
+    public Text hostageText;
+
+    [Header("Player Stats UI")]
+    public Text attackText;
+    public Text defenseText;
+    public Text speedText;
+    public Text accuracyText;
+
     [Header("XP & Level UI")]
     public Text levelText;
     public Text xpText;
     public Slider xpBar;
+    
+    [Header("Other Info")]
+    public Text seedText;
 
     private void OnEnable()
     {
@@ -43,7 +55,10 @@ public class InGameHUD : MonoBehaviour
     {
         UpdateHealth();
         UpdateScore();
+        UpdateHostageCount();
+        UpdatePlayerStats();
         UpdateXPAndLevel();
+        UpdateSeed();
     }
 
     private void UpdateHealth()
@@ -85,7 +100,70 @@ public class InGameHUD : MonoBehaviour
             scoreText.text = $"Score: {GameManager2D.Instance.scoreSystem.currentScore}";
         }
     }
+
+    private void UpdateHostageCount()
+    {
+        if (hostageText == null)
+        {
+            return;
+        }
+
+        if (!hostageText.gameObject.activeSelf)
+        {
+            hostageText.gameObject.SetActive(true);
+        }
+
+        if (HostageManager.Instance != null)
+        {
+            int collected = HostageManager.Instance.GetCollectedHostages();
+            int total = HostageManager.Instance.GetTotalHostages();
+            hostageText.text = $"Hostages: {collected}/{total}";
+        }
+        else
+        {
+            hostageText.text = "Hostages: 0/0";
+        }
+    }
     
+    public void UpdateHostageCount(int collected, int total)
+    {
+        if (hostageText != null)
+        {
+            hostageText.text = $"Hostages: {collected}/{total}";
+        }
+    }
+
+    private void UpdatePlayerStats()
+    {
+        if (GameManager2D.Instance != null && GameManager2D.Instance.player != null)
+        {
+            if (GameManager2D.Instance.player.stats != null)
+            {
+                var stats = GameManager2D.Instance.player.stats;
+
+                if (attackText != null)
+                {
+                    attackText.text = $"ATK: {stats.attack}";
+                }
+
+                if (defenseText != null)
+                {
+                    defenseText.text = $"DEF: {stats.defense}";
+                }
+
+                if (speedText != null)
+                {
+                    speedText.text = $"SPD: {stats.speed}";
+                }
+
+                if (accuracyText != null)
+                {
+                    accuracyText.text = $"ACC: {stats.accuracy}";
+                }
+            }
+        }
+    }
+
     private void UpdateXPAndLevel()
     {
         if (GameManager2D.Instance != null && GameManager2D.Instance.experienceSystem != null)
@@ -134,9 +212,21 @@ public class InGameHUD : MonoBehaviour
     {
         // Frissítjük az UI-t
         UpdateXPAndLevel();
+        UpdatePlayerStats(); // Stats változhatnak szintlépéskor
         UpdateHealth(); // HP is változhat
         
         Debug.Log($"[InGameHUD] Szintlépés! Új szint: {newLevel}!");
+    }
+    
+    private void UpdateSeed()
+    {
+        if (GameManager2D.Instance != null)
+        {
+            if (seedText != null)
+            {
+                seedText.text = $"Seed: {GameManager2D.Instance.currentSeed}";
+            }
+        }
     }
 }
 

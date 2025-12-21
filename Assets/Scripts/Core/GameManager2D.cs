@@ -176,29 +176,50 @@ public class GameManager2D : MonoBehaviour
             UIManager.Instance.OnGameStateChanged(currentState);
         }
     }
-
+    
+    private bool gameEndedWithVictory = false;
+    
     public void EndGame()
     {
+        Debug.Log("[GameManager2D] EndGame() meghívva (vereség)");
         EndGame(false); // Vereség
     }
     
     public void EndGame(bool isVictory)
     {
+        Debug.Log($"[GameManager2D] EndGame(bool isVictory={isVictory}) meghívva");
+        gameEndedWithVictory = isVictory;
         currentState = GameState.GameOver;
         Time.timeScale = 0f;
+        
+        Debug.Log($"[GameManager2D] GameState beállítva: {currentState}, Time.timeScale: {Time.timeScale}");
         
         // UI frissítése
         if (UIManager.Instance != null)
         {
+            Debug.Log($"[GameManager2D] UIManager.Instance megtalálva, OnGameStateChanged hívása (isVictory={isVictory})");
             UIManager.Instance.OnGameStateChanged(currentState, isVictory);
+        }
+        else
+        {
+            Debug.LogError("[GameManager2D] UIManager.Instance == NULL! Nem lehet megjeleníteni a Game Over UI-t!");
         }
     }
     
     public void WinGame()
     {
+        Debug.Log("[GameManager2D] WinGame() meghívva - Győzelem!");
+        
+        // Győzelem bónusz pontok
         if (scoreSystem != null)
         {
-            scoreSystem.AddScore(500);
+            int oldScore = scoreSystem.currentScore;
+            scoreSystem.AddScore(500); // Győzelem bónusz
+            Debug.Log($"[GameManager2D] Győzelem bónusz: +500 pont. Pontszám: {oldScore} → {scoreSystem.currentScore}");
+        }
+        else
+        {
+            Debug.LogWarning("[GameManager2D] ScoreSystem == NULL! Nem lehet bónusz pontot adni.");
         }
         
         EndGame(true);
@@ -384,4 +405,3 @@ public class GameManager2D : MonoBehaviour
         }
     }
 }
-

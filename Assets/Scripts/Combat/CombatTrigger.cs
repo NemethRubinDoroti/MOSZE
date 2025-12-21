@@ -76,6 +76,9 @@ public class CombatTrigger : MonoBehaviour
         
         // Harc indítása
         GameManager2D.Instance.combatManager.StartCombat(playerCombatant, enemyCombatants, enemy2DList);
+        
+        Canvas.ForceUpdateCanvases();
+        
     }
     
     // Közelben lévő ellenségek keresése
@@ -94,7 +97,6 @@ public class CombatTrigger : MonoBehaviour
             return nearbyEnemies;
         }
         
-        // Ez így hatékony?
         List<Enemy2D> allEnemies = spawner.GetSpawnedEnemies();
         
         foreach (Enemy2D enemy in allEnemies)

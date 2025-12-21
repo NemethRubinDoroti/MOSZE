@@ -3,9 +3,6 @@ using UnityEngine;
 
 public class HostageSpawner : MonoBehaviour
 {
-    [Header("Hostage Prefab")]
-    public GameObject hostagePrefab;
-    
     [Header("Hostage Sprite")]
     public Sprite hostageSprite;
     
@@ -13,18 +10,9 @@ public class HostageSpawner : MonoBehaviour
     
     public Hostage2D SpawnHostage(Vector2Int position)
     {
-        GameObject hostageObj;
-        
-        // Ha van prefab, használjuk azt, különben hozzunk létre egy új GameObject-et
-        if (hostagePrefab != null)
-        {
-            hostageObj = Instantiate(hostagePrefab, new Vector3(position.x, position.y, 0), Quaternion.identity);
-        }
-        else
-        {
-            hostageObj = new GameObject($"Hostage_{position.x}_{position.y}");
-            hostageObj.transform.position = new Vector3(position.x, position.y, 0);
-        }
+        // Dinamikusan létrehozunk egy új GameObject-et
+        GameObject hostageObj = new GameObject($"Hostage_{position.x}_{position.y}");
+        hostageObj.transform.position = new Vector3(position.x, position.y, 0);
         
         Hostage2D hostage = hostageObj.GetComponent<Hostage2D>();
         if (hostage == null)

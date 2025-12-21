@@ -3,9 +3,6 @@ using UnityEngine;
 
 public class ItemSpawner : MonoBehaviour
 {
-    [Header("Item Prefab")]
-    public GameObject itemPrefab;
-    
     [Header("Item Sprites")]
     public Sprite healSprite;
     public Sprite weaponSprite;
@@ -18,18 +15,9 @@ public class ItemSpawner : MonoBehaviour
     
     public Item2D SpawnItem(Item2D.ItemType type, Vector2Int position)
     {
-        GameObject itemObj;
-        
-        // Ha van prefab, használjuk azt, különben hozzunk létre egy új GameObject-et
-        if (itemPrefab != null)
-        {
-            itemObj = Instantiate(itemPrefab, new Vector3(position.x, position.y, 0), Quaternion.identity);
-        }
-        else
-        {
-            itemObj = new GameObject($"Item_{type}_{position.x}_{position.y}");
-            itemObj.transform.position = new Vector3(position.x, position.y, 0);
-        }
+        // Dinamikusan létrehozunk egy új GameObject-et
+        GameObject itemObj = new GameObject($"Item_{type}_{position.x}_{position.y}");
+        itemObj.transform.position = new Vector3(position.x, position.y, 0);
         
         Item2D item = itemObj.GetComponent<Item2D>();
         if (item == null)

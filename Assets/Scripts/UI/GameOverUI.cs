@@ -32,12 +32,35 @@ public class GameOverUI : MonoBehaviour
 
     public void OnShow(int finalScore, bool isVictory = false)
     {
+        Debug.Log($"[GameOverUI] OnShow hívva: finalScore={finalScore}, isVictory={isVictory}");
         currentFinalScore = finalScore;
+        
+        RectTransform rectTransform = GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.anchoredPosition = Vector2.zero;
+            rectTransform.sizeDelta = Vector2.zero;
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            
+            // Biztosítjuk, hogy a Canvas-en legyen
+            Canvas canvas = GetComponentInParent<Canvas>();
+            if (canvas == null)
+            {
+                Debug.LogWarning("[GameOverUI] Nincs Canvas a hierarchiában! A GameOverPanel-nek a Canvas alatt kell lennie.");
+            }
+        }
 
         // Megjelenítjük a végső pontszámot
         if (finalScoreText != null)
         {
-            finalScoreText.text = $"Végső pontszám: {finalScore}";
+            finalScoreText.text = $"Final Score: {finalScore}";
+            Debug.Log($"[GameOverUI] Final score text beállítva: {finalScoreText.text}");
+        }
+        else
+        {
+            Debug.LogWarning("[GameOverUI] finalScoreText == NULL!");
         }
 
         // Különböző szöveg győzelem/vereség esetén
@@ -45,14 +68,20 @@ public class GameOverUI : MonoBehaviour
         {
             if (isVictory)
             {
-                gameOverText.text = "Győztél!";
-                gameOverText.color = Color.green;
+                gameOverText.text = "G Y Ő Z T É L";
+                gameOverText.color = Color.green; // Zöld szín győzelem esetén
+                Debug.Log("[GameOverUI] Győzelem szöveg beállítva: 'Győztél!' (zöld)");
             }
             else
             {
-                gameOverText.text = "Elbuktál!";
-                gameOverText.color = Color.red;
+                gameOverText.text = "E L B U K T Á L";
+                gameOverText.color = Color.red; // Piros szín vereség esetén
+                Debug.Log("[GameOverUI] Vereség szöveg beállítva: 'Elbuktál!' (piros)");
             }
+        }
+        else
+        {
+            Debug.LogWarning("[GameOverUI] gameOverText == NULL!");
         }
 
         // Alapértelmezett játékosnév
@@ -93,7 +122,6 @@ public class GameOverUI : MonoBehaviour
 
     private void OnNewGameClicked()
     {
-        Debug.Log("[GameOverUI] Új játék gomb kattintva");
         if (GameManager2D.Instance != null)
         {
             GameManager2D.Instance.ResumeGame(); // Visszaállítjuk a time scale-t
@@ -107,7 +135,6 @@ public class GameOverUI : MonoBehaviour
 
     private void OnMainMenuClicked()
     {
-        Debug.Log("[GameOverUI] Főmenü gomb kattintva");
         if (GameManager2D.Instance != null)
         {
             GameManager2D.Instance.ResumeGame(); // Visszaállítjuk a time scale-t

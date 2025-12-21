@@ -4,19 +4,19 @@ using UnityEngine;
 public class PlayerStatsConfig : ScriptableObject
 {
     [Header("Starting Stats")]
-    public int startingMaxHealth = 100;
-    public int startingAttack = 15;
-    public int startingDefense = 8;
+    public int startingMaxHealth = 200;
+    public int startingAttack = 20;
+    public int startingDefense = 10;
     public int startingSpeed = 12;
     [Range(0, 100)]
     public int startingAccuracy = 85;
     
     [Header("Level Progression (Future Use)")]
-    public int healthPerLevel = 10;
-    public int attackPerLevel = 2;
-    public int defensePerLevel = 1;
-    public int speedPerLevel = 1;
-    public int accuracyPerLevel = 1;
+    public int healthPerLevel = 20;
+    public int attackPerLevel = 3;
+    public int defensePerLevel = 2;
+    public int speedPerLevel = 2;
+    public int accuracyPerLevel = 2;
     
 
     public void ApplyToStats(Stats stats)

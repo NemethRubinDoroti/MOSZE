@@ -15,7 +15,9 @@ public class Enemy2D : MonoBehaviour
         HeavyBot,
         Boss
     }
-
+    
+    private Combatant combatant;
+    
     private void Start()
     {
         stats = GetComponent<Stats>();
@@ -116,6 +118,7 @@ public class Enemy2D : MonoBehaviour
     private void Die()
     {
         Debug.Log($"{type} meghalt!");
+        Debug.Log($"Ellenség {type} meghalt!");
         Destroy(gameObject);
     }
 
@@ -123,8 +126,6 @@ public class Enemy2D : MonoBehaviour
     {
         return position;
     }
-    
-    private Combatant combatant;
     
     public Combatant GetCombatant()
     {
@@ -140,4 +141,3 @@ public class Enemy2D : MonoBehaviour
         return combatant;
     }
 }
-

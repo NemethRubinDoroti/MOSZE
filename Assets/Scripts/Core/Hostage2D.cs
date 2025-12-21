@@ -50,7 +50,7 @@ public class Hostage2D : MonoBehaviour
             Tilemap groundTilemap = GameManager2D.Instance.mapGenerator.groundTilemap;
             if (groundTilemap != null)
             {
-                Vector3 worldPos = GridUtils.GridToWorldPosition(position, groundTilemap);
+                Vector3 worldPos = groundTilemap.CellToWorld(new Vector3Int(position.x, position.y, 0));
                 transform.position = new Vector3(worldPos.x, worldPos.y, transform.position.z);
             }
             else

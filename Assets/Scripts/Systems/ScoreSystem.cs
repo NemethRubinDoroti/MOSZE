@@ -78,10 +78,8 @@ public class ScoreSystem : MonoBehaviour
     
     public List<HighScore> GetHighScores()
     {
-        if (highScores == null)
-        {
-            LoadHighScores();
-        }
+        // Mindig újratöltjük a fájlból, hogy biztosan aktuális legyen
+        LoadHighScores();
         return highScores ?? new List<HighScore>();
     }
     
@@ -94,10 +92,12 @@ public class ScoreSystem : MonoBehaviour
                 string json = File.ReadAllText(highScorePath);
                 HighScoreList scoreList = JsonUtility.FromJson<HighScoreList>(json);
                 highScores = scoreList?.highScores ?? new List<HighScore>();
+                Debug.Log($"[ScoreSystem] Highscore-ok betöltve: {highScores.Count} db, fájl: {highScorePath}");
             }
             else
             {
                 highScores = new List<HighScore>();
+                Debug.Log($"[ScoreSystem] Highscore fájl nem létezik: {highScorePath}");
             }
         }
         catch (Exception e)
@@ -107,4 +107,3 @@ public class ScoreSystem : MonoBehaviour
         }
     }
 }
-

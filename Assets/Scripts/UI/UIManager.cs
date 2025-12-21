@@ -73,11 +73,30 @@ public class UIManager : MonoBehaviour
 
     public void ShowGameOverMenu(int finalScore, bool isVictory = false)
     {
+        Debug.Log($"[UIManager] ShowGameOverMenu hívva: finalScore={finalScore}, isVictory={isVictory}");
         HideAllMenus();
         if (gameOverUI != null)
         {
             gameOverUI.gameObject.SetActive(true);
+            
+            // Biztosítjuk, hogy a GameOverUI megfelelően pozícionálva legyen
+            Transform current = gameOverUI.transform;
+            while (current != null)
+            {
+                if (!current.gameObject.activeSelf)
+                {
+                    current.gameObject.SetActive(true);
+                }
+                current = current.parent;
+            }
+            
+            Canvas.ForceUpdateCanvases();
+            Debug.Log("[UIManager] GameOverUI aktiválva");
             gameOverUI.OnShow(finalScore, isVictory);
+        }
+        else
+        {
+            Debug.LogError("[UIManager] gameOverUI == NULL! Nem lehet megjeleníteni a Game Over menüt!");
         }
     }
 
@@ -141,23 +160,35 @@ public class UIManager : MonoBehaviour
 
     public void OnGameStateChanged(GameManager2D.GameState newState, bool isVictory = false)
     {
+        Debug.Log($"[UIManager] OnGameStateChanged: newState={newState}, isVictory={isVictory}");
+        
         switch (newState)
         {
             case GameManager2D.GameState.MainMenu:
+                Debug.Log("[UIManager] MainMenu állapot");
                 ShowMainMenu();
                 break;
             case GameManager2D.GameState.Playing:
+                Debug.Log("[UIManager] Playing állapot");
                 HideAllMenus();
                 ShowInGameHUD();
                 break;
             case GameManager2D.GameState.Paused:
+                Debug.Log("[UIManager] Paused állapot");
                 ShowPauseMenu();
                 break;
             case GameManager2D.GameState.GameOver:
+                Debug.Log($"[UIManager] GameOver állapot (isVictory={isVictory})");
                 HideInGameHUD();
                 if (GameManager2D.Instance != null && GameManager2D.Instance.scoreSystem != null)
                 {
-                    ShowGameOverMenu(GameManager2D.Instance.scoreSystem.currentScore, isVictory);
+                    int finalScore = GameManager2D.Instance.scoreSystem.currentScore;
+                    Debug.Log($"[UIManager] Végső pontszám: {finalScore}");
+                    ShowGameOverMenu(finalScore, isVictory);
+                }
+                else
+                {
+                    Debug.LogError("[UIManager] GameManager2D.Instance vagy scoreSystem == NULL!");
                 }
                 break;
         }

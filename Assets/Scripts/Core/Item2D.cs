@@ -59,8 +59,15 @@ public class Item2D : MonoBehaviour
         if (GameManager2D.Instance != null && GameManager2D.Instance.mapGenerator != null)
         {
             Tilemap groundTilemap = GameManager2D.Instance.mapGenerator.groundTilemap;
-            Vector3 worldPos = GridUtils.GridToWorldPosition(position, groundTilemap);
-            transform.position = new Vector3(worldPos.x, worldPos.y, transform.position.z);
+            if (groundTilemap != null)
+            {
+                Vector3 worldPos = groundTilemap.CellToWorld(new Vector3Int(position.x, position.y, 0));
+                transform.position = new Vector3(worldPos.x, worldPos.y, transform.position.z);
+            }
+            else
+            {
+                transform.position = new Vector3(position.x, position.y, transform.position.z);
+            }
         }
         else
         {

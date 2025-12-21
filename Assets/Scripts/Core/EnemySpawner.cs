@@ -3,9 +3,6 @@ using UnityEngine;
 
 public class EnemySpawner : MonoBehaviour
 {
-    [Header("Enemy Prefabs")]
-    public GameObject enemyPrefab;
-
     [Header("Enemy Templates")]
     public EnemyTemplate securityBotTemplate;
     public EnemyTemplate patrolBotTemplate;
@@ -16,19 +13,10 @@ public class EnemySpawner : MonoBehaviour
 
     public Enemy2D SpawnEnemy(Enemy2D.EnemyType type, Vector2Int position)
     {
-        GameObject enemyObj;
-
-        // Prefab, fallback új GameObject-et hoz létre
-        if (enemyPrefab != null)
-        {
-            enemyObj = Instantiate(enemyPrefab, new Vector3(position.x, position.y, 0), Quaternion.identity);
-        }
-        else
-        {
-            enemyObj = new GameObject($"Enemy_{type}_{position.x}_{position.y}");
-            enemyObj.transform.position = new Vector3(position.x, position.y, 0);
-        }
-
+        // Dinamikusan létrehozunk egy új GameObject-et
+        GameObject enemyObj = new GameObject($"{type}_{position.x}_{position.y}");
+        enemyObj.transform.position = new Vector3(position.x, position.y, 0);
+        
         Enemy2D enemy = enemyObj.GetComponent<Enemy2D>();
         if (enemy == null)
         {

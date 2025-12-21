@@ -66,20 +66,36 @@ public class Player2D : MonoBehaviour
     {
         if (stats != null)
         {
+            int oldHealth = stats.currentHealth;
             stats.TakeDamage(damage);
+            int newHealth = stats.currentHealth;
+            
+            Debug.Log($"[Player2D] Sebzés: {damage} → HP: {oldHealth} → {newHealth}");
+            
             if (!stats.IsAlive())
             {
+                Debug.Log("[Player2D] Játékos HP 0 vagy kevesebb! Meghalás...");
                 Die();
             }
+        }
+        else
+        {
+            Debug.LogError("[Player2D] TakeDamage hívva, de stats == null!");
         }
     }
     
     private void Die()
     {
+        Debug.Log("[Player2D] Die() metódus meghívva");
+        
         if (GameManager2D.Instance != null)
         {
+            Debug.Log("[Player2D] GameManager2D.Instance megtalálva, EndGame() hívása...");
             GameManager2D.Instance.EndGame();
+        }
+        else
+        {
+            Debug.LogError("[Player2D] GameManager2D.Instance == NULL! Nem lehet befejezni a játékot!");
         }
     }
 }
-
